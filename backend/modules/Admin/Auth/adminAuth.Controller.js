@@ -95,6 +95,63 @@ exports.adminLogin = async (req, res, next) => {
     }
 };
 
-exports.adminProfile = async (req, res) => {
+exports.adminProfile = async (req, res, next) => {
+    try {
 
-}
+        const userId = req.user.id;
+
+        const admin = await AdminModel.findById(userId);
+
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: "Account not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: admin
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.updateProfile = async (req, res, next) => {
+    try {
+
+        const userId = req.user.id;
+
+        const {
+            name,
+            mobileNumber,
+            gender
+        } = req.body;
+
+        const admin = await AdminModel.findById(userId);
+
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: "Account not found"
+            });
+        }
+
+        const updatedAdmin = await AdminModel.updateProfile(userId, {
+            name,
+            mobileNumber,
+            gender
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            data: updatedAdmin
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
