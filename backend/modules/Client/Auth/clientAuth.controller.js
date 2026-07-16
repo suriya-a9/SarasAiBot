@@ -1,21 +1,19 @@
-const AdminModel = require("./adminAuth.model");
+const clientModel = require("./clientAuth.model");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const config = require("../../../config/default");
+const jwt = require('jsonwebtoken');
+const config = require('../../../config/default');
 
-exports.adminRegister = async (req, res, next) => {
-
-    const { name, email, password, role, mobileNumber, gender } = req.body;
-
+exports.clientRegister = async (req, res, next) => {
+    const { name, workEmail, password, mobileNumber, company, website } = req.body;
     try {
-        if (!name || !email || !password) {
+        if (!name || !workEmail || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Name, Email and Password are required."
+                message: "Name, Work Email and Password are required."
             });
         }
 
-        const existingAdmin = await AdminModel.findByEmail(email);
+        const existingAdmin = await clientModel.findByEmail(workEmail);
 
         if (existingAdmin) {
             return res.status(400).json({
@@ -26,42 +24,42 @@ exports.adminRegister = async (req, res, next) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const adminData = await AdminModel.createAdmin({
+        const clientData = await clientModel.createClient({
             name,
-            email,
+            workEmail,
             password: hashedPassword,
-            role,
+            company,
             mobileNumber,
-            gender
+            website
         });
 
         res.status(201).json({
             success: true,
-            message: "Admin registered successfully.",
-            data: adminData
+            message: "Account registered successfully.",
+            data: clientData
         });
 
     } catch (err) {
-        next(err);
+        next(err)
     }
-};
+}
 
-exports.adminLogin = async (req, res, next) => {
+exports.clientLogin = async (req, res, next) => {
 
-    const { email, password } = req.body;
+    const { workEmail, password } = req.body;
 
     try {
 
-        const admin = await AdminModel.findByEmail(email);
+        const client = await clientModel.findByEmail(workEmail);
 
-        if (!admin) {
+        if (!client) {
             return res.status(404).json({
                 success: false,
                 message: "Account not found"
             });
         }
 
-        const passwordCheck = await bcrypt.compare(password, admin.password);
+        const passwordCheck = await bcrypt.compare(password, client.password);
 
         if (!passwordCheck) {
             return res.status(401).json({
@@ -72,10 +70,9 @@ exports.adminLogin = async (req, res, next) => {
 
         const token = jwt.sign(
             {
-                id: admin.id,
-                name: admin.name,
-                email: admin.email,
-                role: admin.role
+                id: client.id,
+                name: client.name,
+                email: client.workemail,
             },
             config.jwt_secret,
             { expiresIn: "1d" }
@@ -83,9 +80,8 @@ exports.adminLogin = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            name: admin.name,
-            email: admin.email,
-            role: admin.role,
+            name: client.name,
+            email: client.workemail,
             token
         });
 
@@ -94,14 +90,14 @@ exports.adminLogin = async (req, res, next) => {
     }
 };
 
-exports.adminProfile = async (req, res, next) => {
+exports.clientProfile = async (req, res, next) => {
     try {
 
         const userId = req.user.id;
 
-        const admin = await AdminModel.findById(userId);
+        const client = await clientModel.findById(userId);
 
-        if (!admin) {
+        if (!client) {
             return res.status(404).json({
                 success: false,
                 message: "Account not found"
@@ -110,7 +106,7 @@ exports.adminProfile = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            data: admin
+            data: client
         });
 
     } catch (err) {
@@ -126,28 +122,30 @@ exports.updateProfile = async (req, res, next) => {
         const {
             name,
             mobileNumber,
-            gender
+            company,
+            website
         } = req.body;
 
-        const admin = await AdminModel.findById(userId);
+        const client = await clientModel.findById(userId);
 
-        if (!admin) {
+        if (!client) {
             return res.status(404).json({
                 success: false,
                 message: "Account not found"
             });
         }
 
-        const updatedAdmin = await AdminModel.updateProfile(userId, {
+        const updatedClient = await clientModel.updateProfile(userId, {
             name,
             mobileNumber,
-            gender
+            company,
+            website
         });
 
         res.status(200).json({
             success: true,
             message: "Profile updated successfully",
-            data: updatedAdmin
+            data: updatedClient
         });
 
     } catch (err) {

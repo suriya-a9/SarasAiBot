@@ -1,6 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import PublicRoute from "./utls/publicRoutes";
 import HomePage from "./pages/publicPages/homePage";
+import CommonAuth from "./pages/publicPages/clientLogin";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
@@ -14,7 +16,16 @@ function App() {
             </PublicRoute>
           }
         />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <CommonAuth />
+            </PublicRoute>
+          }
+        />
       </Routes>
+      <Toaster position="top-right" reverseOrder={false} duration={2000} />
     </>
   )
 }

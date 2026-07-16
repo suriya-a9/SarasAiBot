@@ -8,6 +8,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const adminAuthRoutes = require("./modules/Admin/Auth/adminAuth.routes");
+const clientAuthRoutes = require("./modules/Client/Auth/clientAuth.routes");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -23,6 +24,7 @@ const limiter = rateLimit({
 });
 
 app.use("/api/adminAuth", adminAuthRoutes);
+app.use("/api/clientAuth", clientAuthRoutes);
 
 app.use((err, req, res, next) => {
     logger.error(err.stack);
