@@ -11,7 +11,7 @@ const findByEmail = async (email) => {
     return result.rows[0];
 };
 
-exports.findById = async (id) => {
+const findById = async (id) => {
 
     const query = `
         SELECT
@@ -67,23 +67,23 @@ const createAdmin = async ({
     return result.rows[0];
 };
 
-exports.updateProfile = async (id, data) => {
+const updateProfile = async (id, data) => {
 
     const query = `
-        UPDATE admins
-        SET
-            name = COALESCE($1, name)
-            mobile_number = COALESCE($2, mobile_number),
-            gender = COALESCE($3, gender)
-        WHERE id = $4
-        RETURNING
-            id,
-            name,
-            email,
-            role,
-            mobile_number,
-            gender;
-    `;
+    UPDATE admins
+    SET
+        name = COALESCE($1, name),
+        mobile_number = COALESCE($2, mobile_number),
+        gender = COALESCE($3, gender)
+    WHERE id = $4
+    RETURNING
+        id,
+        name,
+        email,
+        role,
+        mobile_number,
+        gender;
+`;
 
     const values = [
         data.name,
