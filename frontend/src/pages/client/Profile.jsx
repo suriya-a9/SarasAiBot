@@ -158,7 +158,7 @@ export default function Profile() {
 
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between border-b border-zinc-100 pb-8">
                     <div>
-                        <h1 className="text-4xl font-extrabold tracking-tight text-[#40295C] sm:text-5xl bg-linear-to-b from-zinc-950 to-zinc-600 bg-clip-text text-[#40295C]">
+                        <h1 className="text-4xl font-extrabold tracking-tight text-[#40295C] sm:text-5xl bg-linear-to-b from-zinc-950 to-zinc-600 bg-clip-text">
                             My Profile
                         </h1>
                         <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
