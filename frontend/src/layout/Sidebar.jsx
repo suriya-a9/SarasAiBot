@@ -1,50 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import styles from './Layout.module.css';
+import {
+    LayoutDashboard,
+    MessageSquare,
+    BarChart3,
+    Settings,
+    CircleHelp,
+} from "lucide-react";
 
-const Sidebar = ({ isOpen, closeSidebar }) => {
+const Sidebar = ({ isOpen, isMobile, closeSidebar }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [expandedMenu, setExpandedMenu] = useState(null);
+
+    const { logout, name } = useAuth();
+    const [accountOpen, setAccountOpen] = useState(false);
+    const accountRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (accountRef.current && !accountRef.current.contains(e.target)) {
+                setAccountOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const navigationItems = [
         {
-            id: 'dashboard',
-            label: 'Dashboard',
-            path: '/dashboard',
-            icon: '📊',
+            id: "dashboard",
+            label: "Dashboard",
+            path: "/dashboard",
+            icon: LayoutDashboard,
             submenu: null,
         },
         {
-            id: 'chat',
-            label: 'Chat',
-            path: '/chat',
-            icon: '💬',
+            id: "chat",
+            label: "Chat",
+            path: "/chat",
+            icon: MessageSquare,
             submenu: null,
         },
         {
-            id: 'analytics',
-            label: 'Analytics',
-            path: '/analytics',
-            icon: '📈',
+            id: "analytics",
+            label: "Analytics",
+            path: "/analytics",
+            icon: BarChart3,
             submenu: null,
         },
         {
-            id: 'settings',
-            label: 'Settings',
-            path: null,
-            icon: '⚙️',
-            submenu: [
-                { label: 'Profile', path: '/settings/profile' },
-                { label: 'Preferences', path: '/settings/preferences' },
-                { label: 'Security', path: '/settings/security' },
-            ],
+            id: "settings",
+            label: "Settings",
+            path: "/settings",
+            icon: Settings,
+            submenu: null,
         },
         {
-            id: 'help',
-            label: 'Help & Support',
-            path: '/help',
-            icon: '❓',
+            id: "help",
+            label: "Help & Support",
+            path: "/help",
+            icon: CircleHelp,
             submenu: null,
         },
     ];
@@ -56,9 +73,12 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
         }
     };
 
-    const toggleSubmenu = (itemId) => {
-        setExpandedMenu(expandedMenu === itemId ? null : itemId);
+    const handleLogout = () => {
+        logout();
+        navigate('/');
     };
+
+
 
     const isActive = (path) => {
         return location.pathname === path;
@@ -73,9 +93,8 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
                 />
             )}
 
-            <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
+            <aside className={`${styles.sidebar} ${isMobile && isOpen ? styles.sidebarOpen : ''}`}>
                 <div className={styles.sidebarHeader}>
-                    <h2 className={styles.sidebarTitle}>Navigation</h2>
                     <button
                         className={styles.closeBtn}
                         onClick={closeSidebar}
@@ -87,53 +106,57 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
 
                 <nav className={styles.sidebarNav}>
                     <ul className={styles.navList}>
-                        {navigationItems.map((item) => (
-                            <li key={item.id} className={styles.navItem}>
-                                <div className={styles.navItemContainer}>
-                                    <button
-                                        className={`${styles.navLink} ${isActive(item.path) ? styles.active : ''
-                                            }`}
-                                        onClick={() => {
-                                            if (item.submenu) {
-                                                toggleSubmenu(item.id);
-                                            } else {
-                                                handleNavigation(item.path);
-                                            }
-                                        }}
-                                    >
-                                        <span className={styles.navIcon}>{item.icon}</span>
-                                        <span className={styles.navLabel}>{item.label}</span>
-                                        {item.submenu && (
-                                            <span className={`${styles.submenuArrow} ${expandedMenu === item.id ? styles.expanded : ''
-                                                }`}>
-                                                ▼
-                                            </span>
-                                        )}
-                                    </button>
-                                </div>
+                        {navigationItems.map((item) => {
+                            const Icon = item.icon;
 
-                                {item.submenu && (
-                                    <ul className={`${styles.submenu} ${expandedMenu === item.id ? styles.submenuOpen : ''
-                                        }`}>
-                                        {item.submenu.map((subitem, index) => (
-                                            <li key={index} className={styles.submenuItem}>
-                                                <button
-                                                    className={`${styles.submenuLink} ${isActive(subitem.path) ? styles.active : ''
-                                                        }`}
-                                                    onClick={() => handleNavigation(subitem.path)}
-                                                >
-                                                    {subitem.label}
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </li>
-                        ))}
+                            return (
+                                <li key={item.id} className={styles.navItem}>
+                                    <div className={styles.navItemContainer}>
+                                        <button
+                                            className={`${styles.navLink} ${isActive(item.path) ? styles.active : ""}`}
+                                            onClick={() => handleNavigation(item.path)}
+                                            aria-label={item.label}
+                                        >
+                                            <span className={styles.navIcon}>
+                                                <Icon size={20} />
+                                            </span>
+                                            {item.hasNotification && <span className={styles.navBadge} />}
+                                            <span className={styles.navLabel}>{item.label}</span>
+                                            <span className={styles.tooltip}>{item.label.toUpperCase()}</span>
+                                        </button>
+                                    </div>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </nav>
 
                 <div className={styles.sidebarFooter}>
+                    <div className={styles.accountWrap} ref={accountRef}>
+                        <button
+                            className={styles.accountBtn}
+                            onClick={() => setAccountOpen((prev) => !prev)}
+                            aria-haspopup="true"
+                            aria-expanded={accountOpen}
+                        >
+                            <div className={styles.accountAvatar}>
+                                {name ? name.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                        </button>
+
+                        <div className={`${styles.accountMenu} ${accountOpen ? styles.accountMenuOpen : ''}`}>
+                            <button
+                                className={styles.accountMenuItem}
+                                onClick={() => { navigate('/profile'); setAccountOpen(false); closeSidebar(); }}
+                            >
+                                Profile
+                            </button>
+                            <button className={styles.accountMenuItem} onClick={handleLogout}>
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+
                     <p className={styles.versionText}>v1.0.0</p>
                 </div>
             </aside>

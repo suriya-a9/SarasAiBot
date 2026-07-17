@@ -3,7 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
-import logo from "../../assets/chat-logo.png";
+import registerBanner from "../../assets/register_banner.png";
 
 export default function ClientRegister() {
     const navigate = useNavigate();
@@ -21,16 +21,8 @@ export default function ClientRegister() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-
-        setErrors((prev) => ({
-            ...prev,
-            [name]: "",
-        }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        setErrors((prev) => ({ ...prev, [name]: "" }));
     };
 
     const handleSubmit = async (e) => {
@@ -53,162 +45,130 @@ export default function ClientRegister() {
         } finally { setLoading(false); }
     };
 
+    const inputClass = (field) =>
+        `w-full h-11 rounded-lg border px-4 outline-none transition-colors text-sm ${errors[field] ? "border-red-500" : "border-gray-300 focus:border-gray-500"
+        }`;
+
     return (
-        <div className="min-h-screen bg-white px-6 py-8">
-            <Link to='/' className="flex items-center gap-2">
-                <img src={logo} alt="logo" className="w-12 h-12" />
-                <span className="text-xl font-bold tracking-tight text-gray-900">Saras Ai Bot</span>
-            </Link>
-            <div className="w-full max-w-md mx-auto mt-16">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">
-                        Create your account
-                    </h1>
+        <div className="h-screen w-full flex overflow-hidden bg-white">
+            <div className="hidden lg:block lg:w-[42%] h-full">
+                <img
+                    src={registerBanner}
+                    alt="Register"
+                    className="w-full h-full object-cover"
+                />
+            </div>
 
-                    <p className="text-gray-500 mt-2 text-sm">
-                        Register your <span className="text-blue-600">Saras Ai</span> account
-                    </p>
-                </div>
-                <form onSubmit={handleSubmit} className="space-y-4">
-
-                    <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="Full Name"
-                        className={`w-full h-14 rounded-lg border px-4 outline-none transition-colors ${errors.name
-                            ? "border-red-500"
-                            : "border-gray-300 focus:border-gray-500"
-                            }`}
-                    />
-
-                    {errors.name && (
-                        <p className="mt-1 text-sm text-red-500">
-                            {errors.name}
+            <div className="flex-1 h-full flex items-center justify-center px-6 lg:px-12">
+                <div className="w-full max-w-md">
+                    <div className="text-center mb-5">
+                        <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+                        <p className="text-gray-500 mt-2 text-sm">
+                            Sign in to{" "}
+                            <span className="text-blue-600">Saras Ai</span> account
                         </p>
-                    )}
+                    </div>
 
-                    <input
-                        type="email"
-                        name="workEmail"
-                        value={formData.workEmail}
-                        onChange={handleChange}
-                        placeholder="Your work email"
-                        className={`w-full h-14 rounded-lg border px-4 outline-none transition-colors ${errors.workEmail
-                            ? "border-red-500"
-                            : "border-gray-300 focus:border-gray-500"
-                            }`}
-                    />
+                    <form onSubmit={handleSubmit} className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    placeholder="Full Name"
+                                    className={inputClass("name")}
+                                />
+                                {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                            </div>
+                            <div>
+                                <input
+                                    type="tel"
+                                    name="mobileNumber"
+                                    value={formData.mobileNumber}
+                                    onChange={handleChange}
+                                    placeholder="Mobile Number"
+                                    className={inputClass("mobileNumber")}
+                                />
+                                {errors.mobileNumber && <p className="mt-1 text-xs text-red-500">{errors.mobileNumber}</p>}
+                            </div>
+                        </div>
 
-                    {errors.workEmail && (
-                        <p className="mt-1 text-sm text-red-500">
-                            {errors.workEmail}
-                        </p>
-                    )}
+                        <div>
+                            <input
+                                type="email"
+                                name="workEmail"
+                                value={formData.workEmail}
+                                onChange={handleChange}
+                                placeholder="Your work email"
+                                className={inputClass("workEmail")}
+                            />
+                            {errors.workEmail && <p className="mt-1 text-xs text-red-500">{errors.workEmail}</p>}
+                        </div>
 
-                    <div className="relative">
-                        <input
-                            type={showPassword ? "text" : "password"}
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            placeholder="Password"
-                            className={`w-full h-14 rounded-lg border pl-4 pr-12 outline-none transition-colors ${errors.password
-                                ? "border-red-500"
-                                : "border-gray-300 focus:border-gray-500"
-                                }`}
-                        />
+                        <div>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    placeholder="Password"
+                                    className={`${inputClass("password")} pr-11`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                            {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <input
+                                    type="text"
+                                    name="company"
+                                    value={formData.company}
+                                    onChange={handleChange}
+                                    placeholder="Company Name"
+                                    className={inputClass("company")}
+                                />
+                                {errors.company && <p className="mt-1 text-xs text-red-500">{errors.company}</p>}
+                            </div>
+                            <div>
+                                <input
+                                    type="url"
+                                    name="website"
+                                    value={formData.website}
+                                    onChange={handleChange}
+                                    placeholder="Website URL"
+                                    className={inputClass("website")}
+                                />
+                                {errors.website && <p className="mt-1 text-xs text-red-500">{errors.website}</p>}
+                            </div>
+                        </div>
 
                         <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2"
+                            type="submit"
+                            disabled={loading}
+                            className="w-full h-12 rounded-lg bg-emerald-400 hover:bg-emerald-500 font-semibold text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                         >
-                            {showPassword ? (
-                                <EyeOff size={20} />
-                            ) : (
-                                <Eye size={20} />
-                            )}
+                            {loading ? "Please wait..." : "Get started"}
                         </button>
-                    </div>
+                    </form>
 
-                    {errors.password && (
-                        <p className="mt-1 text-sm text-red-500">
-                            {errors.password}
+                    <div className="mt-5 text-center">
+                        <p className="text-sm text-gray-600">
+                            Already have an account?{" "}
+                            <button type="button" onClick={() => navigate("/login")} className="text-blue-600 font-medium">
+                                Log In
+                            </button>
                         </p>
-                    )}
-
-                    <input
-                        type="tel"
-                        name="mobileNumber"
-                        value={formData.mobileNumber}
-                        onChange={handleChange}
-                        placeholder="Mobile Number"
-                        className={`w-full h-14 rounded-lg border px-4 outline-none transition-colors ${errors.mobileNumber
-                            ? "border-red-500"
-                            : "border-gray-300 focus:border-gray-500"
-                            }`}
-                    />
-
-                    {errors.mobileNumber && (
-                        <p className="mt-1 text-sm text-red-500">
-                            {errors.mobileNumber}
-                        </p>
-                    )}
-
-                    <input
-                        type="text"
-                        name="company"
-                        value={formData.company}
-                        onChange={handleChange}
-                        placeholder="Company Name"
-                        className={`w-full h-14 rounded-lg border px-4 outline-none transition-colors ${errors.company
-                            ? "border-red-500"
-                            : "border-gray-300 focus:border-gray-500"
-                            }`}
-                    />
-
-                    {errors.company && (
-                        <p className="mt-1 text-sm text-red-500">
-                            {errors.company}
-                        </p>
-                    )}
-
-                    <input
-                        type="url"
-                        name="website"
-                        value={formData.website}
-                        onChange={handleChange}
-                        placeholder="Website URL"
-                        className={`w-full h-14 rounded-lg border px-4 outline-none transition-colors ${errors.website
-                            ? "border-red-500"
-                            : "border-gray-300 focus:border-gray-500"
-                            }`}
-                    />
-
-                    {errors.website && (
-                        <p className="mt-1 text-sm text-red-500">
-                            {errors.website}
-                        </p>
-                    )}
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full h-14 rounded-lg bg-emerald-400 hover:bg-emerald-500 font-semibold text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {loading ? "Please wait..." : "Create Account"}
-                    </button>
-                </form>
-                <div className="mt-8">
-                    <div className="relative flex items-center">
-                        <div className="grow border-t border-gray-200"></div>
-                        <span className="mx-4 text-sm text-gray-500">or</span>
-                        <div className="grow border-t border-gray-200"></div>
-                    </div>
-                    <div className="mt-8 text-center">
-                        <p>Already have an account? <button type="button" onClick={() => navigate("/login")} className="text-blue-600 font-medium">Log In</button></p>
                     </div>
                 </div>
             </div>

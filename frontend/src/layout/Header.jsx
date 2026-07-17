@@ -27,7 +27,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                             <line x1="3" y1="18" x2="21" y2="18" strokeWidth="2" strokeLinecap="round" />
                         </svg>
                     </button>
-                    <h1 className={styles.logo}>SaraS</h1>
+                    <h1 className={styles.logo}>SaraS Ai Bot</h1>
                 </div>
 
                 <div className={styles.headerRight}>
