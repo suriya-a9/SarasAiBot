@@ -4,7 +4,7 @@ import { jwtDecode } from "jwt-decode";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(null);
+  const [clientToken, setClientToken] = useState(null);
   const [id, setId] = useState(null);
   const [name, setName] = useState(null);
   const [role, setRole] = useState(null);
@@ -12,8 +12,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
+    localStorage.removeItem("clientToken");
+    setClientToken(null);
     setId(null);
     setName(null);
     setRole(null);
@@ -21,8 +21,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = (jwtToken) => {
-    localStorage.setItem("token", jwtToken);
-    setToken(jwtToken);
+    localStorage.setItem("clientToken", jwtToken);
+    setClientToken(jwtToken);
     const decoded = jwtDecode(jwtToken);
     setId(decoded.id);
     setName(decoded.name);
@@ -41,13 +41,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const storedToken = localStorage.getItem("clientToken");
     if (storedToken) {
       if (isTokenExpired(storedToken)) {
         logout();
         setLoading(false);
       } else {
-        setToken(storedToken);
+        setClientToken(storedToken);
         const decoded = jwtDecode(storedToken);
         setId(decoded.id);
         setName(decoded.name);
@@ -61,9 +61,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!clientToken) return;
 
-    const decoded = jwtDecode(token);
+    const decoded = jwtDecode(clientToken);
     if (decoded.exp) {
       const expiryTime = decoded.exp * 1000 - Date.now();
       const timer = setTimeout(() => {
@@ -72,10 +72,10 @@ export const AuthProvider = ({ children }) => {
 
       return () => clearTimeout(timer);
     }
-  }, [token]);
+  }, [clientToken]);
 
   return (
-    <AuthContext.Provider value={{ token, id, name, role, permissions, login, logout, loading }}>
+    <AuthContext.Provider value={{ clientToken, id, name, role, permissions, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

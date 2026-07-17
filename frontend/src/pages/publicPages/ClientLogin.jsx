@@ -4,12 +4,14 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import logo from "../../assets/chat-logo.png";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ClientLogin() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const [formData, setFormData] = useState({
         workEmail: "",
@@ -46,16 +48,8 @@ export default function ClientLogin() {
             if (data?.success) {
                 toast.success("Login successful");
 
-                localStorage.setItem("clientToken", data.token);
-
-                localStorage.setItem(
-                    "clientData",
-                    JSON.stringify({
-                        name: data.name,
-                        workEmail: data.email,
-                    })
-                );
-
+                login(data.token);
+                navigate("/dashboard");
             }
         } catch (error) {
             console.error(error);

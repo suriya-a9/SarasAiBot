@@ -1,15 +1,23 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 
 export default function PublicRoute({ children }) {
-    const { token, loading } = useAuth();
+    const { clientToken, loading } = useAuth();
+    const location = useLocation();
+
+    useEffect(() => {
+        if (clientToken && (location.pathname === "/login" || location.pathname === "/register")) {
+            window.history.replaceState(null, "", "/dashboard");
+        }
+    }, [clientToken, location.pathname]);
 
     if (loading) {
         return <div>Loading...</div>;
     }
 
-    if (token) {
-        return <Navigate to="/admin-dashboard" replace />;
+    if (clientToken) {
+        return <Navigate to="/dashboard" replace />;
     }
 
     return children;

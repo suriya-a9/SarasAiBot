@@ -1,8 +1,11 @@
 import { Routes, Route } from "react-router-dom";
 import PublicRoute from "./utls/publicRoutes";
+import ClientPrivateRoute from "./utls/ClientPrivateRoute";
+import MainLayout from "./layout/MainLayout";
 import HomePage from "./pages/publicPages/homePage";
 import CommonAuth from "./pages/publicPages/clientLogin";
 import Register from "./pages/publicPages/ClientRegister";
+import Dashboard from "./pages/client/Dashboard";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -33,6 +36,16 @@ function App() {
             </PublicRoute>
           }
         />
+        
+        <Route
+          element={
+            <ClientPrivateRoute>
+              <MainLayout />
+            </ClientPrivateRoute>
+          }
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
       </Routes>
       <Toaster position="top-right" reverseOrder={false} duration={2000} />
     </>
