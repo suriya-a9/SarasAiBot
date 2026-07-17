@@ -24,13 +24,16 @@ exports.clientRegister = async (req, res, next) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        const image = req.file ? req.file.filename : null;
+
         const clientData = await clientModel.createClient({
             name,
             workEmail,
             password: hashedPassword,
             company,
             mobileNumber,
-            website
+            website,
+            image
         });
 
         res.status(201).json({
@@ -135,11 +138,14 @@ exports.updateProfile = async (req, res, next) => {
             });
         }
 
+        const image = req.file ? req.file.filename : null;
+
         const updatedClient = await clientModel.updateProfile(userId, {
             name,
             mobileNumber,
             company,
-            website
+            website,
+            image
         });
 
         res.status(200).json({

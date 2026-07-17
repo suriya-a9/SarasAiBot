@@ -156,7 +156,7 @@ export default function ClientRegister() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full h-12 rounded-lg bg-emerald-400 hover:bg-emerald-500 font-semibold text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                            className="w-full h-12 rounded-lg bg-linear-to-r from-blue-600 to-violet-500 font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                         >
                             {loading ? "Please wait..." : "Get started"}
                         </button>

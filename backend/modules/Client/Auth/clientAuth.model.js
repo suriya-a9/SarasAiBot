@@ -20,7 +20,8 @@ const findById = async (id) => {
             workEmail,
             mobile_number,
             company,
-            website
+            website,
+            image
         FROM clients
         WHERE id = $1
     `;
@@ -36,7 +37,8 @@ const createClient = async ({
     password,
     company,
     mobileNumber,
-    website
+    website,
+    image
 }) => {
 
     const query = `
@@ -47,10 +49,18 @@ const createClient = async ({
             password,
             company,
             mobile_number,
-            website
+            website,
+            image
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, name, workEmail, company, mobile_number, website;
+        VALUES ($1,$2,$3,$4,$5,$6,$7)
+        RETURNING
+            id,
+            name,
+            workEmail,
+            company,
+            mobile_number,
+            website,
+            image;
     `;
 
     const values = [
@@ -59,7 +69,8 @@ const createClient = async ({
         password,
         company,
         mobileNumber,
-        website
+        website,
+        image
     ];
 
     const result = await db.query(query, values);
@@ -70,20 +81,22 @@ const createClient = async ({
 const updateProfile = async (id, data) => {
 
     const query = `
-    UPDATE clients
-    SET
-        name = COALESCE($1, name),
-        mobile_number = COALESCE($2, mobile_number),
-        website = COALESCE($3, website),
-        company = COALESCE($4, company)
-    WHERE id = $5
-    RETURNING
-        id,
-        name,
-        workemail,
-        website,
-        mobile_number,
-        company;
+UPDATE clients
+SET
+    name = COALESCE($1,name),
+    mobile_number = COALESCE($2,mobile_number),
+    website = COALESCE($3,website),
+    company = COALESCE($4,company),
+    image = COALESCE($5,image)
+WHERE id=$6
+RETURNING
+    id,
+    name,
+    workEmail,
+    mobile_number,
+    company,
+    website,
+    image;
 `;
 
     const values = [
@@ -91,6 +104,7 @@ const updateProfile = async (id, data) => {
         data.mobileNumber,
         data.website,
         data.company,
+        data.image,
         id
     ];
 

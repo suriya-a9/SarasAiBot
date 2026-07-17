@@ -197,7 +197,8 @@
     display: none;
 }
 
-.navLink .tooltip {
+.navLink .tooltip,
+.accountBtn .tooltip {
     position: absolute;
     left: 100%;
     top: 50%;
@@ -218,7 +219,9 @@
 }
 
 .navLink:hover .tooltip,
-.navLink:focus-visible .tooltip {
+.navLink:focus-visible .tooltip,
+.accountBtn:hover .tooltip,
+.accountBtn:focus-visible .tooltip {
     opacity: 1;
     transform: translateY(-50%) translateX(4px);
 }
@@ -315,6 +318,7 @@
     background: none;
     border: none;
     cursor: pointer;
+    position: relative;
 }
 
 .accountAvatar {

@@ -6,6 +6,7 @@ import HomePage from "./pages/publicPages/homePage";
 import CommonAuth from "./pages/publicPages/clientLogin";
 import Register from "./pages/publicPages/ClientRegister";
 import Dashboard from "./pages/client/Dashboard";
+import Profile from "./pages/client/Profile";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -36,7 +37,7 @@ function App() {
             </PublicRoute>
           }
         />
-        
+
         <Route
           element={
             <ClientPrivateRoute>
@@ -45,6 +46,7 @@ function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
       <Toaster position="top-right" reverseOrder={false} duration={2000} />

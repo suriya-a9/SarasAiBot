@@ -159,7 +159,7 @@ export default function ClientLogin() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-14 rounded-lg bg-emerald-400 hover:bg-emerald-500 font-semibold text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full h-14 rounded-lg bg-linear-to-r from-blue-600 to-violet-500 font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? "Please wait..." : "Log In"}
                     </button>

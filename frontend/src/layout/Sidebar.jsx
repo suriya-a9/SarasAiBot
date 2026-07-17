@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import styles from './Layout.module.css';
 import {
     LayoutDashboard,
-    MessageSquare,
     BarChart3,
     Settings,
     CircleHelp,
+    Bot,
+    User
 } from "lucide-react";
 
 const Sidebar = ({ isOpen, isMobile, closeSidebar }) => {
@@ -38,9 +39,9 @@ const Sidebar = ({ isOpen, isMobile, closeSidebar }) => {
         },
         {
             id: "chat",
-            label: "Chat",
+            label: "Chat Widget",
             path: "/chat",
-            icon: MessageSquare,
+            icon: Bot,
             submenu: null,
         },
         {
@@ -140,8 +141,10 @@ const Sidebar = ({ isOpen, isMobile, closeSidebar }) => {
                             aria-expanded={accountOpen}
                         >
                             <div className={styles.accountAvatar}>
-                                {name ? name.charAt(0).toUpperCase() : 'U'}
+                                <User size={18} strokeWidth={2.2} />
                             </div>
+
+                            <span className={styles.tooltip}>PROFILE</span>
                         </button>
 
                         <div className={`${styles.accountMenu} ${accountOpen ? styles.accountMenuOpen : ''}`}>
