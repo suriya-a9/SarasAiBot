@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Eye, EyeOff, Building2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import logo from "../../assets/chat-logo.png";
 
-export default function CommonAuth() {
+export default function ClientLogin() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
@@ -84,12 +84,12 @@ export default function CommonAuth() {
 
     return (
         <div className="min-h-screen bg-white px-6 py-8">
-            <div className="flex items-center gap-2">
+            <Link to='/' className="flex items-center gap-2">
                 <img src={logo} alt="logo" className="w-12 h-12" />
                 <span className="text-xl font-bold tracking-tight text-gray-900">
                     Saras Ai Bot
                 </span>
-            </div>
+            </Link>
 
             <div className="w-full max-w-md mx-auto mt-16">
                 <div className="text-center mb-8">
