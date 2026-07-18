@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import styles from './Layout.module.css';
 
 const MainLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -30,12 +29,12 @@ const MainLayout = () => {
     };
 
     return (
-        <div className={styles.layoutContainer}>
+        <div className="flex flex-col h-screen bg-[#f5f7fa]">
 
-            <div className={styles.mainContent}>
+            <div className="flex flex-1 overflow-hidden relative">
                 {isMobile && (
                     <button
-                        className={styles.mobileSidebarToggle}
+                        className="fixed top-3 left-3 z-95 w-10 h-10 flex items-center justify-center bg-white border border-[#e0e6ed] rounded-lg text-[#2d1b4e] cursor-pointer shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
                         onClick={toggleSidebar}
                         aria-label="Open navigation"
                     >
@@ -53,7 +52,11 @@ const MainLayout = () => {
                     closeSidebar={closeSidebar}
                 />
 
-                <main className={styles.pageContent}>
+                <main className="flex-1 overflow-y-auto p-4 pt-16 sm:p-6 sm:pt-18 md:p-8 md:pt-8 bg-[#f5f7fa] w-full min-w-0
+                    [&::-webkit-scrollbar]:w-1.5
+                    [&::-webkit-scrollbar-track]:bg-transparent
+                    [&::-webkit-scrollbar-thumb]:bg-[#cbd5e0] [&::-webkit-scrollbar-thumb]:rounded-[3px]
+                    hover:[&::-webkit-scrollbar-thumb]:bg-[#a0aec0]">
                     <Outlet />
                 </main>
             </div>
