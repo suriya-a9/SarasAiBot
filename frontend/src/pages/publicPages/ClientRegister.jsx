@@ -4,11 +4,13 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import registerBanner from "../../assets/register_banner.png";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 export default function ClientRegister() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState("");
     const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({
         name: "",
@@ -27,22 +29,44 @@ export default function ClientRegister() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         try {
+            if (!captchaToken) {
+                toast.error("Please complete the CAPTCHA");
+                return;
+            }
+
             setLoading(true);
-            const { data } = await api.post("/clientAuth/register", formData);
+
+            const payload = {
+                ...formData,
+                captchaToken,
+            };
+
+            const { data } = await api.post("/clientAuth/register", payload);
+
             if (data?.success) {
                 toast.success("Registration successful");
                 navigate("/");
             }
         } catch (error) {
-            if (error.response?.status === 400 && error.response?.data?.errors) {
+            if (
+                error.response?.status === 400 &&
+                error.response?.data?.errors
+            ) {
                 const v = {};
-                error.response.data.errors.forEach(err => v[err.path] = err.msg);
+                error.response.data.errors.forEach((err) => {
+                    v[err.path] = err.msg;
+                });
                 setErrors(v);
             } else {
-                toast.error(error.response?.data?.message || "Something went wrong");
+                toast.error(
+                    error.response?.data?.message || "Something went wrong"
+                );
             }
-        } finally { setLoading(false); }
+        } finally {
+            setLoading(false);
+        }
     };
 
     const inputClass = (field) =>
@@ -152,7 +176,12 @@ export default function ClientRegister() {
                                 {errors.website && <p className="mt-1 text-xs text-red-500">{errors.website}</p>}
                             </div>
                         </div>
-
+                        <Turnstile
+                            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                            onSuccess={(token) => setCaptchaToken(token)}
+                            onExpire={() => setCaptchaToken("")}
+                            onError={() => setCaptchaToken("")}
+                        />
                         <button
                             type="submit"
                             disabled={loading}

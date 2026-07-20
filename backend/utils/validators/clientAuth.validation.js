@@ -1,5 +1,22 @@
 const { body } = require("express-validator");
 
+const personalEmailDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "hotmail.com",
+    "outlook.com",
+    "live.com",
+    "icloud.com",
+    "aol.com",
+    "proton.me",
+    "protonmail.com",
+    "zoho.com",
+    "yandex.com",
+    "mail.com",
+    "gmx.com",
+    "rediffmail.com"
+];
+
 exports.registerValidation = [
     body("name")
         .notEmpty()
@@ -7,7 +24,19 @@ exports.registerValidation = [
 
     body("workEmail")
         .isEmail()
-        .withMessage("Valid email is required"),
+        .withMessage("Valid email is required")
+        .bail()
+        .custom((email) => {
+            const domain = email.split("@")[1].toLowerCase();
+
+            if (personalEmailDomains.includes(domain)) {
+                throw new Error(
+                    "Please use your company/business email address"
+                );
+            }
+
+            return true;
+        }),
 
     body("password")
         .isLength({ min: 6 })
@@ -34,6 +63,18 @@ exports.loginValidation = [
         .bail()
         .isEmail()
         .withMessage("Valid email is required"),
+    // .bail()
+    // .custom((email) => {
+    //     const domain = email.split("@")[1].toLowerCase();
+
+    //     if (personalEmailDomains.includes(domain)) {
+    //         throw new Error(
+    //             "Please use your company/business email address"
+    //         );
+    //     }
+
+    //     return true;
+    // }),
 
     body("password")
         .notEmpty()

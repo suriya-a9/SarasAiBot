@@ -8,6 +8,7 @@ import {
     Settings,
     ArrowUpRight,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const stats = [
     {
@@ -64,6 +65,7 @@ const recentChats = [
 ];
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     return (
         <div className="min-h-screen bg-white text-zinc-800 antialiased p-6 md:p-8 lg:p-12 selection:bg-zinc-100 selection:text-zinc-900">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between border-b border-zinc-100 pb-8">
@@ -76,7 +78,7 @@ const Dashboard = () => {
                     </p>
                 </div>
 
-                <button className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm">
+                <button className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm" onClick={()=>navigate('/chat')}>
                     <Plus size={16} className="transition-transform group-hover:rotate-90" />
                     Create Chatbot
                 </button>

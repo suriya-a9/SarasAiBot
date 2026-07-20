@@ -2,10 +2,19 @@ const clientModel = require("./clientAuth.model");
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const config = require('../../../config/default');
+const { verifyTurnstile } = require("../../../utils/verifyTurnstile");
 
 exports.clientRegister = async (req, res, next) => {
-    const { name, workEmail, password, mobileNumber, company, website } = req.body;
+    const { name, workEmail, password, mobileNumber, company, website, captchaToken } = req.body;
     try {
+        const validCaptcha = await verifyTurnstile(captchaToken);
+
+        if (!validCaptcha) {
+            return res.status(400).json({
+                success: false,
+                message: "Captcha verification failed"
+            });
+        }
         if (!name || !workEmail || !password) {
             return res.status(400).json({
                 success: false,

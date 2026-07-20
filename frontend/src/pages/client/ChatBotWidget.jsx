@@ -37,7 +37,7 @@ const colorOptions = [
 const toneOptions = ["Friendly", "Professional", "Playful", "Formal"];
 const languageOptions = ["English", "Spanish", "French", "German", "Hindi", "Tamil"];
 
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function getClientToken() {
     return localStorage.getItem("clientToken");

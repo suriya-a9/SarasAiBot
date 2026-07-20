@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { MessageSquare, ChevronLeft, ChevronRight, X, Clock } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function getClientToken() {
     return localStorage.getItem("clientToken");
