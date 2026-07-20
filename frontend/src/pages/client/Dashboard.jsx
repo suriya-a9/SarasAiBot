@@ -78,10 +78,10 @@ const Dashboard = () => {
                     </p>
                 </div>
 
-                <button className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm" onClick={()=>navigate('/chat')}>
+                {/* <button className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm" onClick={()=>navigate('/chat')}>
                     <Plus size={16} className="transition-transform group-hover:rotate-90" />
                     Create Chatbot
-                </button>
+                </button> */}
             </div>
 
             <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">

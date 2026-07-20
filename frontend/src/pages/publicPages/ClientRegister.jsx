@@ -46,8 +46,8 @@ export default function ClientRegister() {
             const { data } = await api.post("/clientAuth/register", payload);
 
             if (data?.success) {
-                toast.success("Registration successful");
-                navigate("/");
+                toast.success("Registration successful. Kindly Login");
+                navigate("/login");
             }
         } catch (error) {
             if (

@@ -16,6 +16,9 @@ import {
     Copy,
     Check,
     ClipboardList,
+    SlidersHorizontal,
+    ArrowLeft,
+    Code2,
 } from "lucide-react";
 
 const avatarOptions = [
@@ -89,6 +92,15 @@ const Section = ({ icon: Icon, title, children }) => (
     </div>
 );
 
+const StatPill = ({ label, value }) => (
+    <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/40 px-4 py-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+            {label}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-zinc-900 truncate">{value}</p>
+    </div>
+);
+
 const ChatbotWidgetBuilder = ({ onSaved }) => {
     const [name, setName] = useState("Aria");
     const [welcome, setWelcome] = useState(
@@ -123,7 +135,14 @@ const ChatbotWidgetBuilder = ({ onSaved }) => {
     const [savedBotId, setSavedBotId] = useState(null);
     const [copied, setCopied] = useState(false);
 
+    // NEW: controls whether we show the read-only Overview page or the editable Settings form.
+    // Only relevant once a bot exists — a brand-new user always lands on the settings/create form.
+    const [showSettings, setShowSettings] = useState(false);
+
     const AvatarIcon = avatarOptions.find((a) => a.id === avatar)?.icon || Bot;
+
+    const isEditingExisting = !!savedBotId;
+    const showOverview = isEditingExisting && !showSettings;
 
     function applyBotToForm(bot) {
         setSavedBotId(bot.id);
@@ -207,11 +226,11 @@ const ChatbotWidgetBuilder = ({ onSaved }) => {
         };
 
         try {
-            const isEditing = !!savedBotId;
+            const wasEditing = !!savedBotId;
             const res = await fetch(
-                isEditing ? `${API_BASE_URL}/api/bots/${savedBotId}` : `${API_BASE_URL}/api/bots`,
+                wasEditing ? `${API_BASE_URL}/api/bots/${savedBotId}` : `${API_BASE_URL}/api/bots`,
                 {
-                    method: isEditing ? "PUT" : "POST",
+                    method: wasEditing ? "PUT" : "POST",
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${getClientToken()}`,
@@ -227,6 +246,9 @@ const ChatbotWidgetBuilder = ({ onSaved }) => {
 
             const bot = await res.json();
             setSavedBotId(bot.id);
+            // After a successful save (whether first-time create or an edit),
+            // drop back to the read-only Overview page.
+            setShowSettings(false);
             if (onSaved) onSaved(bot);
         } catch (err) {
             setError(err.message);
@@ -258,25 +280,56 @@ const ChatbotWidgetBuilder = ({ onSaved }) => {
         <div className="min-h-screen bg-white text-zinc-800 antialiased p-6 md:p-8 lg:p-12 selection:bg-zinc-100 selection:text-zinc-900">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between border-b border-zinc-100 pb-8">
                 <div>
+                    {showOverview ? (
+                        <button
+                            onClick={() => setShowSettings(false)}
+                            className="mb-3 hidden text-xs font-semibold text-zinc-400"
+                        />
+                    ) : isEditingExisting ? (
+                        <button
+                            onClick={() => setShowSettings(false)}
+                            className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-zinc-400 transition-colors hover:text-zinc-700"
+                        >
+                            <ArrowLeft size={13} />
+                            Back to overview
+                        </button>
+                    ) : null}
                     <h1 className="text-4xl font-extrabold tracking-tight text-[#40295C] sm:text-5xl bg-linear-to-b from-zinc-950 to-zinc-600 bg-clip-text">
-                        {savedBotId ? "Edit Chatbot" : "Create Chatbot"}
+                        {showOverview ? "Your Chatbot" : savedBotId ? "Edit Chatbot" : "Create Chatbot"}
                     </h1>
                     <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                        Configure Behavior & Preview Widget
+                        {showOverview
+                            ? "Embed Code & Live Status"
+                            : "Configure Behavior & Preview Widget"}
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button className="rounded-full border border-zinc-200/80 bg-white px-6 py-3 text-sm font-semibold text-zinc-600 transition-all hover:border-zinc-300 hover:text-zinc-950">
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm disabled:opacity-60 disabled:hover:scale-100"
-                    >
-                        {saving ? "Saving…" : "Save Chatbot"}
-                    </button>
+                    {showOverview ? (
+                        <button
+                            onClick={() => setShowSettings(true)}
+                            className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm"
+                        >
+                            <SlidersHorizontal size={14} />
+                            Edit Settings
+                        </button>
+                    ) : (
+                        <>
+                            <button
+                                onClick={() => isEditingExisting && setShowSettings(false)}
+                                className="rounded-full border border-zinc-200/80 bg-white px-6 py-3 text-sm font-semibold text-zinc-600 transition-all hover:border-zinc-300 hover:text-zinc-950"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm disabled:opacity-60 disabled:hover:scale-100"
+                            >
+                                {saving ? "Saving…" : "Save Chatbot"}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -286,7 +339,8 @@ const ChatbotWidgetBuilder = ({ onSaved }) => {
                 </div>
             )}
 
-            {embedCode && (
+            {/* Embed code only lives on the Overview page now */}
+            {showOverview && embedCode && (
                 <div className="mt-6 rounded-2xl border border-zinc-200/60 bg-zinc-50/40 p-5">
                     <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
                         Embed code
@@ -311,202 +365,265 @@ const ChatbotWidgetBuilder = ({ onSaved }) => {
 
             <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <div className="xl:col-span-2 space-y-6">
-                    <Section icon={Bot} title="Identity">
-                        <Field label="Chatbot Name">
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="e.g. Aria"
-                                className="w-full rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
-                            />
-                        </Field>
-
-                        <Field label="Welcome Message" hint="Shown as the first bubble when a visitor opens the chat.">
-                            <textarea
-                                value={welcome}
-                                onChange={(e) => setWelcome(e.target.value)}
-                                rows={3}
-                                className="w-full resize-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
-                            />
-                        </Field>
-
-                        <Field label="Avatar">
-                            <div className="flex gap-3">
-                                {avatarOptions.map(({ id, icon: Icon }) => (
-                                    <button
-                                        key={id}
-                                        onClick={() => setAvatar(id)}
-                                        className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-all ${avatar === id
-                                            ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
-                                            : "border-zinc-200/80 text-zinc-400 hover:border-zinc-300 hover:text-zinc-600"
-                                            }`}
+                    {showOverview ? (
+                        <>
+                            <Section icon={Bot} title="Chatbot Summary">
+                                <div className="flex items-center gap-4">
+                                    <div
+                                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white"
+                                        style={{ backgroundColor: color }}
                                     >
-                                        <Icon size={17} strokeWidth={2.2} />
-                                    </button>
-                                ))}
-                            </div>
-                        </Field>
+                                        <AvatarIcon size={22} strokeWidth={2.2} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-lg font-bold text-zinc-900 truncate">{name}</p>
+                                        <p className="mt-0.5 line-clamp-2 text-xs text-zinc-400">{welcome}</p>
+                                    </div>
+                                </div>
 
-                        <Field label="Knowledge Base" hint="Paste FAQ content, product info, or policies. The bot answers using this.">
-                            <textarea
-                                value={knowledgeBase}
-                                onChange={(e) => setKnowledgeBase(e.target.value)}
-                                rows={5}
-                                placeholder="e.g. Business hours are 9am-6pm IST, Monday to Friday. Returns accepted within 30 days..."
-                                className="w-full resize-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
-                            />
-                        </Field>
-                    </Section>
-
-                    <Section icon={Palette} title="Appearance">
-                        <Field label="Accent Color">
-                            <div className="flex flex-wrap gap-3">
-                                {colorOptions.map((c) => (
-                                    <button
-                                        key={c.id}
-                                        onClick={() => setColor(c.value)}
-                                        style={{ backgroundColor: c.value }}
-                                        className={`h-9 w-9 rounded-full ring-2 ring-offset-2 transition-all ${color === c.value ? "ring-zinc-900" : "ring-transparent"
-                                            }`}
-                                        aria-label={c.id}
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                    <StatPill label="Tone" value={tone} />
+                                    <StatPill label="Language" value={language} />
+                                    <StatPill
+                                        label="Position"
+                                        value={position === "right" ? "Bottom Right" : "Bottom Left"}
                                     />
-                                ))}
-                            </div>
-                        </Field>
-
-                        <Field label="Widget Position">
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setPosition("left")}
-                                    className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${position === "left"
-                                        ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
-                                        : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
-                                        }`}
-                                >
-                                    <LayoutPanelLeft size={15} />
-                                    Bottom Left
-                                </button>
-                                <button
-                                    onClick={() => setPosition("right")}
-                                    className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${position === "right"
-                                        ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
-                                        : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
-                                        }`}
-                                >
-                                    <LayoutPanelLeft size={15} className="-scale-x-100" />
-                                    Bottom Right
-                                </button>
-                            </div>
-                        </Field>
-                    </Section>
-
-                    <Section icon={Smile} title="Behavior">
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                            <Field label="Tone">
-                                <div className="relative">
-                                    <select
-                                        value={tone}
-                                        onChange={(e) => setTone(e.target.value)}
-                                        className="w-full appearance-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400"
-                                    >
-                                        {toneOptions.map((t) => (
-                                            <option key={t} value={t}>
-                                                {t}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ChevronDown
-                                        size={15}
-                                        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400"
+                                    <StatPill
+                                        label="Pre-chat Form"
+                                        value={requireContactForm ? "Required" : "Off"}
                                     />
                                 </div>
-                            </Field>
 
-                            <Field label="Language">
-                                <div className="relative">
-                                    <select
-                                        value={language}
-                                        onChange={(e) => setLanguage(e.target.value)}
-                                        className="w-full appearance-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400"
-                                    >
-                                        {languageOptions.map((l) => (
-                                            <option key={l} value={l}>
-                                                {l}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <Globe2
-                                        size={15}
-                                        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400"
-                                    />
-                                </div>
-                            </Field>
-                        </div>
+                                {suggestions.length > 0 && (
+                                    <Field label="Suggested Questions">
+                                        <div className="flex flex-wrap gap-2">
+                                            {suggestions.map((s, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="rounded-full border border-zinc-200/80 bg-zinc-50/40 px-3.5 py-2 text-xs font-medium text-zinc-600"
+                                                >
+                                                    {s}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </Field>
+                                )}
+                            </Section>
 
-                        <Field label="Suggested Questions" hint="Quick-reply chips shown above the input.">
-                            <div className="flex flex-wrap gap-2">
-                                {suggestions.map((s, idx) => (
-                                    <span
-                                        key={idx}
-                                        className="group flex items-center gap-2 rounded-full border border-zinc-200/80 bg-zinc-50/40 px-3.5 py-2 text-xs font-medium text-zinc-600"
-                                    >
-                                        {s}
-                                        <button
-                                            onClick={() => removeSuggestion(idx)}
-                                            className="text-zinc-350 transition-colors hover:text-rose-500"
-                                        >
-                                            <Trash2 size={12} />
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                            <div className="flex gap-2 pt-1">
-                                <input
-                                    type="text"
-                                    value={newSuggestion}
-                                    onChange={(e) => setNewSuggestion(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && addSuggestion()}
-                                    placeholder="Add a suggested question"
-                                    className="flex-1 rounded-xl border border-zinc-200/80 bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
-                                />
+                            <Section icon={Code2} title="Installation">
+                                <p className="text-sm text-zinc-500 leading-relaxed">
+                                    Your chatbot is live. Use the embed code above to add it to your site, or
+                                    head into settings to change how {name || "your chatbot"} looks and behaves.
+                                </p>
                                 <button
-                                    onClick={addSuggestion}
-                                    className="flex items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 text-zinc-500 transition-all hover:border-zinc-300 hover:text-zinc-950"
+                                    onClick={() => setShowSettings(true)}
+                                    className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-semibold text-zinc-600 transition-all hover:border-zinc-300 hover:text-zinc-950 w-fit"
                                 >
-                                    <Plus size={16} />
+                                    <SlidersHorizontal size={14} />
+                                    Open Settings
                                 </button>
-                            </div>
-                        </Field>
-                    </Section>
+                            </Section>
+                        </>
+                    ) : (
+                        <>
+                            <Section icon={Bot} title="Identity">
+                                <Field label="Chatbot Name">
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="e.g. Aria"
+                                        className="w-full rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
+                                    />
+                                </Field>
 
-                    <Section icon={ClipboardList} title="Pre-chat Form">
-                        <Toggle
-                            checked={requireContactForm}
-                            onChange={setRequireContactForm}
-                            label="Require contact form before chat"
-                            description="Visitors must submit their details before they can start chatting."
-                        />
+                                <Field label="Welcome Message" hint="Shown as the first bubble when a visitor opens the chat.">
+                                    <textarea
+                                        value={welcome}
+                                        onChange={(e) => setWelcome(e.target.value)}
+                                        rows={3}
+                                        className="w-full resize-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
+                                    />
+                                </Field>
 
-                        {requireContactForm && (
-                            <Field label="Fields to collect">
-                                <div className="flex flex-wrap gap-2">
-                                    {["name", "email", "phone"].map((field) => (
+                                <Field label="Avatar">
+                                    <div className="flex gap-3">
+                                        {avatarOptions.map(({ id, icon: Icon }) => (
+                                            <button
+                                                key={id}
+                                                onClick={() => setAvatar(id)}
+                                                className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-all ${avatar === id
+                                                    ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
+                                                    : "border-zinc-200/80 text-zinc-400 hover:border-zinc-300 hover:text-zinc-600"
+                                                    }`}
+                                            >
+                                                <Icon size={17} strokeWidth={2.2} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </Field>
+
+                                <Field label="Knowledge Base" hint="Paste FAQ content, product info, or policies. The bot answers using this.">
+                                    <textarea
+                                        value={knowledgeBase}
+                                        onChange={(e) => setKnowledgeBase(e.target.value)}
+                                        rows={5}
+                                        placeholder="e.g. Business hours are 9am-6pm IST, Monday to Friday. Returns accepted within 30 days..."
+                                        className="w-full resize-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
+                                    />
+                                </Field>
+                            </Section>
+
+                            <Section icon={Palette} title="Appearance">
+                                <Field label="Accent Color">
+                                    <div className="flex flex-wrap gap-3">
+                                        {colorOptions.map((c) => (
+                                            <button
+                                                key={c.id}
+                                                onClick={() => setColor(c.value)}
+                                                style={{ backgroundColor: c.value }}
+                                                className={`h-9 w-9 rounded-full ring-2 ring-offset-2 transition-all ${color === c.value ? "ring-zinc-900" : "ring-transparent"
+                                                    }`}
+                                                aria-label={c.id}
+                                            />
+                                        ))}
+                                    </div>
+                                </Field>
+
+                                <Field label="Widget Position">
+                                    <div className="flex gap-3">
                                         <button
-                                            key={field}
-                                            onClick={() => toggleContactField(field)}
-                                            className={`rounded-full border px-4 py-2 text-xs font-semibold capitalize transition-all ${contactFormFields.includes(field)
+                                            onClick={() => setPosition("left")}
+                                            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${position === "left"
                                                 ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
                                                 : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
                                                 }`}
                                         >
-                                            {field}
+                                            <LayoutPanelLeft size={15} />
+                                            Bottom Left
                                         </button>
-                                    ))}
+                                        <button
+                                            onClick={() => setPosition("right")}
+                                            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${position === "right"
+                                                ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
+                                                : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
+                                                }`}
+                                        >
+                                            <LayoutPanelLeft size={15} className="-scale-x-100" />
+                                            Bottom Right
+                                        </button>
+                                    </div>
+                                </Field>
+                            </Section>
+
+                            <Section icon={Smile} title="Behavior">
+                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                    <Field label="Tone">
+                                        <div className="relative">
+                                            <select
+                                                value={tone}
+                                                onChange={(e) => setTone(e.target.value)}
+                                                className="w-full appearance-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400"
+                                            >
+                                                {toneOptions.map((t) => (
+                                                    <option key={t} value={t}>
+                                                        {t}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown
+                                                size={15}
+                                                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400"
+                                            />
+                                        </div>
+                                    </Field>
+
+                                    <Field label="Language">
+                                        <div className="relative">
+                                            <select
+                                                value={language}
+                                                onChange={(e) => setLanguage(e.target.value)}
+                                                className="w-full appearance-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400"
+                                            >
+                                                {languageOptions.map((l) => (
+                                                    <option key={l} value={l}>
+                                                        {l}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <Globe2
+                                                size={15}
+                                                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400"
+                                            />
+                                        </div>
+                                    </Field>
                                 </div>
-                            </Field>
-                        )}
-                    </Section>
+
+                                <Field label="Suggested Questions" hint="Quick-reply chips shown above the input.">
+                                    <div className="flex flex-wrap gap-2">
+                                        {suggestions.map((s, idx) => (
+                                            <span
+                                                key={idx}
+                                                className="group flex items-center gap-2 rounded-full border border-zinc-200/80 bg-zinc-50/40 px-3.5 py-2 text-xs font-medium text-zinc-600"
+                                            >
+                                                {s}
+                                                <button
+                                                    onClick={() => removeSuggestion(idx)}
+                                                    className="text-zinc-350 transition-colors hover:text-rose-500"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <div className="flex gap-2 pt-1">
+                                        <input
+                                            type="text"
+                                            value={newSuggestion}
+                                            onChange={(e) => setNewSuggestion(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && addSuggestion()}
+                                            placeholder="Add a suggested question"
+                                            className="flex-1 rounded-xl border border-zinc-200/80 bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
+                                        />
+                                        <button
+                                            onClick={addSuggestion}
+                                            className="flex items-center justify-center rounded-xl border border-zinc-200/80 bg-white px-4 text-zinc-500 transition-all hover:border-zinc-300 hover:text-zinc-950"
+                                        >
+                                            <Plus size={16} />
+                                        </button>
+                                    </div>
+                                </Field>
+                            </Section>
+
+                            <Section icon={ClipboardList} title="Pre-chat Form">
+                                <Toggle
+                                    checked={requireContactForm}
+                                    onChange={setRequireContactForm}
+                                    label="Require contact form before chat"
+                                    description="Visitors must submit their details before they can start chatting."
+                                />
+
+                                {requireContactForm && (
+                                    <Field label="Fields to collect">
+                                        <div className="flex flex-wrap gap-2">
+                                            {["name", "email", "phone"].map((field) => (
+                                                <button
+                                                    key={field}
+                                                    onClick={() => toggleContactField(field)}
+                                                    className={`rounded-full border px-4 py-2 text-xs font-semibold capitalize transition-all ${contactFormFields.includes(field)
+                                                        ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
+                                                        : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
+                                                        }`}
+                                                >
+                                                    {field}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Field>
+                                )}
+                            </Section>
+                        </>
+                    )}
                 </div>
 
                 <div className="xl:sticky xl:top-8 xl:self-start">
