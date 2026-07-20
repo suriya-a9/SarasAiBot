@@ -271,7 +271,7 @@ export default function Profile() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Mobile Telephony</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Mobile</label>
                                 <div className="relative">
                                     <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
                                     <input
