@@ -8,6 +8,7 @@ import Register from "./pages/publicPages/ClientRegister";
 import Dashboard from "./pages/client/Dashboard";
 import Profile from "./pages/client/Profile";
 import { Toaster } from "react-hot-toast";
+import ChatbotWidgetBuilder from "./pages/client/ChatBotWidget";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/chat" element={<ChatbotWidgetBuilder />} />
         </Route>
       </Routes>
       <Toaster position="top-right" reverseOrder={false} duration={2000} />
