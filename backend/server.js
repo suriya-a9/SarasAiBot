@@ -9,10 +9,13 @@ const rateLimit = require("express-rate-limit");
 
 const adminAuthRoutes = require("./modules/Admin/Auth/adminAuth.routes");
 const clientAuthRoutes = require("./modules/Client/Auth/clientAuth.routes");
+const sarasBotRoutes = require("./modules/SarasAiBot/bot.routes");
+const sarasBotChatRoutes = require("./modules/SarasAiBot/chat.routes");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+app.use(express.static('public'));
 
 app.use(cors());
 app.use(helmet());
@@ -26,6 +29,9 @@ const limiter = rateLimit({
 
 app.use("/api/adminAuth", adminAuthRoutes);
 app.use("/api/clientAuth", clientAuthRoutes);
+app.use("/api/bots", sarasBotRoutes);
+app.use("/api/chat", sarasBotChatRoutes);
+app.use('/api/bots', require('./modules/SarasAiBot/analytics.routes'));
 
 app.use((err, req, res, next) => {
     logger.error(err.stack);

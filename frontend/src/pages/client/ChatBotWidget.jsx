@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Bot,
     Sparkles,
@@ -13,6 +13,9 @@ import {
     LayoutPanelLeft,
     Plus,
     Trash2,
+    Copy,
+    Check,
+    ClipboardList,
 } from "lucide-react";
 
 const avatarOptions = [
@@ -34,6 +37,12 @@ const colorOptions = [
 const toneOptions = ["Friendly", "Professional", "Playful", "Formal"];
 const languageOptions = ["English", "Spanish", "French", "German", "Hindi", "Tamil"];
 
+const API_BASE_URL = "http://localhost:8080";
+
+function getClientToken() {
+    return localStorage.getItem("clientToken");
+}
+
 const Field = ({ label, hint, children }) => (
     <div className="space-y-2.5">
         <div>
@@ -44,6 +53,28 @@ const Field = ({ label, hint, children }) => (
         </div>
         {children}
     </div>
+);
+
+const Toggle = ({ checked, onChange, label, description }) => (
+    <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className="flex w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-white px-4 py-3.5 text-left transition-colors hover:border-zinc-300"
+    >
+        <div>
+            <p className="text-sm font-semibold text-zinc-900">{label}</p>
+            {description && <p className="mt-0.5 text-xs text-zinc-400">{description}</p>}
+        </div>
+        <span
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${checked ? "bg-[#40295C]" : "bg-zinc-200"
+                }`}
+        >
+            <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? "translate-x-6" : "translate-x-1"
+                    }`}
+            />
+        </span>
+    </button>
 );
 
 const Section = ({ icon: Icon, title, children }) => (
@@ -58,7 +89,7 @@ const Section = ({ icon: Icon, title, children }) => (
     </div>
 );
 
-const ChatbotWidgetBuilder = () => {
+const ChatbotWidgetBuilder = ({ onSaved }) => {
     const [name, setName] = useState("Aria");
     const [welcome, setWelcome] = useState(
         "Hi there 👋 I'm Aria. Ask me anything about pricing, setup, or your account."
@@ -75,7 +106,70 @@ const ChatbotWidgetBuilder = () => {
     const [newSuggestion, setNewSuggestion] = useState("");
     const [widgetOpen, setWidgetOpen] = useState(true);
 
+    const [knowledgeBase, setKnowledgeBase] = useState("");
+
+    const [requireContactForm, setRequireContactForm] = useState(false);
+    const [contactFormFields, setContactFormFields] = useState(["name", "email"]);
+
+    const toggleContactField = (field) => {
+        setContactFormFields((current) =>
+            current.includes(field) ? current.filter((f) => f !== field) : [...current, field]
+        );
+    };
+
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
+    const [savedBotId, setSavedBotId] = useState(null);
+    const [copied, setCopied] = useState(false);
+
     const AvatarIcon = avatarOptions.find((a) => a.id === avatar)?.icon || Bot;
+
+    function applyBotToForm(bot) {
+        setSavedBotId(bot.id);
+        setName(bot.name || "");
+        setWelcome(bot.welcome_message || "");
+        setAvatar(bot.avatar || "bot");
+        setColor(bot.accent_color || "#40295C");
+        setTone(bot.tone || "Friendly");
+        setLanguage(bot.language || "English");
+        setPosition(bot.widget_position || "right");
+        const parsedSuggestions =
+            typeof bot.suggestions === "string" ? JSON.parse(bot.suggestions) : bot.suggestions;
+        setSuggestions(parsedSuggestions || []);
+        setKnowledgeBase(bot.knowledge_base || "");
+
+        setRequireContactForm(!!bot.require_contact_form);
+        const parsedFields =
+            typeof bot.contact_form_fields === "string"
+                ? JSON.parse(bot.contact_form_fields)
+                : bot.contact_form_fields;
+        setContactFormFields(parsedFields || ["name", "email"]);
+    }
+
+    useEffect(() => {
+        async function loadExistingBot() {
+            setLoading(true);
+            setError(null);
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/bots`, {
+                    headers: { Authorization: `Bearer ${getClientToken()}` },
+                });
+                if (!res.ok) throw new Error("Failed to load your chatbot");
+                const bots = await res.json();
+
+                if (bots && bots.length > 0) {
+                    applyBotToForm(bots[0]);
+                }
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadExistingBot();
+    }, []);
 
     const addSuggestion = () => {
         const trimmed = newSuggestion.trim();
@@ -88,13 +182,84 @@ const ChatbotWidgetBuilder = () => {
         setSuggestions((s) => s.filter((_, i) => i !== idx));
     };
 
+    const handleSave = async () => {
+        if (!name.trim()) {
+            setError("Chatbot name is required.");
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+
+        const payload = {
+            name,
+            tone,
+            language,
+            welcomeMessage: welcome,
+            avatar,
+            accentColor: color,
+            widgetPosition: position,
+            suggestions,
+            knowledgeBase,
+            requireContactForm,
+            contactFormFields,
+            systemInstructions: `You are ${name}, a ${tone.toLowerCase()} assistant. Respond in ${language}.`,
+        };
+
+        try {
+            const isEditing = !!savedBotId;
+            const res = await fetch(
+                isEditing ? `${API_BASE_URL}/api/bots/${savedBotId}` : `${API_BASE_URL}/api/bots`,
+                {
+                    method: isEditing ? "PUT" : "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${getClientToken()}`,
+                    },
+                    body: JSON.stringify(payload),
+                }
+            );
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Failed to save chatbot");
+            }
+
+            const bot = await res.json();
+            setSavedBotId(bot.id);
+            if (onSaved) onSaved(bot);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const embedCode = savedBotId
+        ? `<script src="${API_BASE_URL}/widget.js" data-bot-id="${savedBotId}"></script>`
+        : null;
+
+    const copyEmbedCode = async () => {
+        if (!embedCode) return;
+        await navigator.clipboard.writeText(embedCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    if (loading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center text-sm font-medium text-zinc-400">
+                Loading chatbot…
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-white text-zinc-800 antialiased p-6 md:p-8 lg:p-12 selection:bg-zinc-100 selection:text-zinc-900">
-            {/* Header */}
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between border-b border-zinc-100 pb-8">
                 <div>
                     <h1 className="text-4xl font-extrabold tracking-tight text-[#40295C] sm:text-5xl bg-linear-to-b from-zinc-950 to-zinc-600 bg-clip-text">
-                        Create Chatbot
+                        {savedBotId ? "Edit Chatbot" : "Create Chatbot"}
                     </h1>
                     <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
                         Configure Behavior & Preview Widget
@@ -105,15 +270,46 @@ const ChatbotWidgetBuilder = () => {
                     <button className="rounded-full border border-zinc-200/80 bg-white px-6 py-3 text-sm font-semibold text-zinc-600 transition-all hover:border-zinc-300 hover:text-zinc-950">
                         Cancel
                     </button>
-                    <button className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm">
-                        Save Chatbot
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm disabled:opacity-60 disabled:hover:scale-100"
+                    >
+                        {saving ? "Saving…" : "Save Chatbot"}
                     </button>
                 </div>
             </div>
 
-            {/* Body */}
+            {error && (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                    {error}
+                </div>
+            )}
+
+            {embedCode && (
+                <div className="mt-6 rounded-2xl border border-zinc-200/60 bg-zinc-50/40 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+                        Embed code
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <code className="flex-1 overflow-x-auto rounded-lg bg-zinc-900 px-3 py-2.5 text-xs text-zinc-100">
+                            {embedCode}
+                        </code>
+                        <button
+                            onClick={copyEmbedCode}
+                            className="flex items-center gap-1.5 rounded-lg border border-zinc-200/80 bg-white px-3 py-2.5 text-xs font-semibold text-zinc-600 hover:border-zinc-300"
+                        >
+                            {copied ? <Check size={13} /> : <Copy size={13} />}
+                            {copied ? "Copied" : "Copy"}
+                        </button>
+                    </div>
+                    <p className="mt-2 text-xs text-zinc-400">
+                        Paste this snippet into your website's HTML, right before the closing &lt;/body&gt; tag.
+                    </p>
+                </div>
+            )}
+
             <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
-                {/* Left: Form */}
                 <div className="xl:col-span-2 space-y-6">
                     <Section icon={Bot} title="Identity">
                         <Field label="Chatbot Name">
@@ -142,14 +338,24 @@ const ChatbotWidgetBuilder = () => {
                                         key={id}
                                         onClick={() => setAvatar(id)}
                                         className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-all ${avatar === id
-                                                ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
-                                                : "border-zinc-200/80 text-zinc-400 hover:border-zinc-300 hover:text-zinc-600"
+                                            ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
+                                            : "border-zinc-200/80 text-zinc-400 hover:border-zinc-300 hover:text-zinc-600"
                                             }`}
                                     >
                                         <Icon size={17} strokeWidth={2.2} />
                                     </button>
                                 ))}
                             </div>
+                        </Field>
+
+                        <Field label="Knowledge Base" hint="Paste FAQ content, product info, or policies. The bot answers using this.">
+                            <textarea
+                                value={knowledgeBase}
+                                onChange={(e) => setKnowledgeBase(e.target.value)}
+                                rows={5}
+                                placeholder="e.g. Business hours are 9am-6pm IST, Monday to Friday. Returns accepted within 30 days..."
+                                className="w-full resize-none rounded-xl border border-zinc-200/80 bg-white px-4 py-3 text-sm font-medium text-zinc-900 outline-none transition-colors focus:border-zinc-400 placeholder:text-zinc-400"
+                            />
                         </Field>
                     </Section>
 
@@ -174,8 +380,8 @@ const ChatbotWidgetBuilder = () => {
                                 <button
                                     onClick={() => setPosition("left")}
                                     className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${position === "left"
-                                            ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
-                                            : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
+                                        ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
+                                        : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
                                         }`}
                                 >
                                     <LayoutPanelLeft size={15} />
@@ -184,8 +390,8 @@ const ChatbotWidgetBuilder = () => {
                                 <button
                                     onClick={() => setPosition("right")}
                                     className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${position === "right"
-                                            ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
-                                            : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
+                                        ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
+                                        : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
                                         }`}
                                 >
                                     <LayoutPanelLeft size={15} className="-scale-x-100" />
@@ -273,9 +479,36 @@ const ChatbotWidgetBuilder = () => {
                             </div>
                         </Field>
                     </Section>
+
+                    <Section icon={ClipboardList} title="Pre-chat Form">
+                        <Toggle
+                            checked={requireContactForm}
+                            onChange={setRequireContactForm}
+                            label="Require contact form before chat"
+                            description="Visitors must submit their details before they can start chatting."
+                        />
+
+                        {requireContactForm && (
+                            <Field label="Fields to collect">
+                                <div className="flex flex-wrap gap-2">
+                                    {["name", "email", "phone"].map((field) => (
+                                        <button
+                                            key={field}
+                                            onClick={() => toggleContactField(field)}
+                                            className={`rounded-full border px-4 py-2 text-xs font-semibold capitalize transition-all ${contactFormFields.includes(field)
+                                                ? "border-[#40295C] bg-[#40295C]/5 text-[#40295C]"
+                                                : "border-zinc-200/80 text-zinc-500 hover:border-zinc-300"
+                                                }`}
+                                        >
+                                            {field}
+                                        </button>
+                                    ))}
+                                </div>
+                            </Field>
+                        )}
+                    </Section>
                 </div>
 
-                {/* Right: Live Preview */}
                 <div className="xl:sticky xl:top-8 xl:self-start">
                     <div className="rounded-2xl border border-zinc-200/60 bg-zinc-50/20 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                         <div className="border-b border-zinc-200/60 p-6 flex items-center justify-between bg-white">
@@ -284,13 +517,11 @@ const ChatbotWidgetBuilder = () => {
                             </h2>
                             <span className="flex items-center gap-1.5 rounded-md bg-zinc-50 px-2 py-1 text-xs font-semibold text-emerald-700 border border-zinc-200/50">
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                Syncing
+                                {savedBotId ? "Saved" : "Unsaved"}
                             </span>
                         </div>
 
-                        {/* Mock website canvas */}
-                        <div className="relative h-[560px] bg-[linear-gradient(135deg,#fafafa_25%,transparent_25%),linear-gradient(225deg,#fafafa_25%,transparent_25%),linear-gradient(45deg,#fafafa_25%,transparent_25%),linear-gradient(315deg,#fafafa_25%,#ffffff_25%)] bg-[length:20px_20px]">
-                            {/* fake browser chrome */}
+                        <div className="relative h-140 bg-[linear-gradient(135deg,#fafafa_25%,transparent_25%),linear-gradient(225deg,#fafafa_25%,transparent_25%),linear-gradient(45deg,#fafafa_25%,transparent_25%),linear-gradient(315deg,#fafafa_25%,#ffffff_25%)] bg-size-[20px_20px]">
                             <div className="absolute inset-x-0 top-0 flex items-center gap-1.5 border-b border-zinc-200/60 bg-white/90 backdrop-blur px-4 py-2.5">
                                 <span className="h-2.5 w-2.5 rounded-full bg-zinc-200" />
                                 <span className="h-2.5 w-2.5 rounded-full bg-zinc-200" />
@@ -300,10 +531,9 @@ const ChatbotWidgetBuilder = () => {
                                 </div>
                             </div>
 
-                            {/* Chat window */}
                             {widgetOpen && (
                                 <div
-                                    className={`absolute bottom-20 w-[300px] overflow-hidden rounded-2xl border border-zinc-200/70 bg-white shadow-xl transition-all ${position === "right" ? "right-5" : "left-5"
+                                    className={`absolute bottom-20 w-75 overflow-hidden rounded-2xl border border-zinc-200/70 bg-white shadow-xl transition-all ${position === "right" ? "right-5" : "left-5"
                                         }`}
                                 >
                                     <div
@@ -332,7 +562,7 @@ const ChatbotWidgetBuilder = () => {
                                         </button>
                                     </div>
 
-                                    <div className="max-h-[260px] space-y-3 overflow-y-auto bg-zinc-50/40 p-4">
+                                    <div className="max-h-65 space-y-3 overflow-y-auto bg-zinc-50/40 p-4">
                                         <div className="flex items-start gap-2">
                                             <div
                                                 className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white"
@@ -340,7 +570,7 @@ const ChatbotWidgetBuilder = () => {
                                             >
                                                 <AvatarIcon size={11} strokeWidth={2.2} />
                                             </div>
-                                            <div className="max-w-[210px] rounded-2xl rounded-tl-sm bg-white border border-zinc-200/70 px-3.5 py-2.5 text-xs leading-relaxed text-zinc-700 shadow-sm">
+                                            <div className="max-w-52.5 rounded-2xl rounded-tl-sm bg-white border border-zinc-200/70 px-3.5 py-2.5 text-xs leading-relaxed text-zinc-700 shadow-sm">
                                                 {welcome || "Say hello to your visitors here."}
                                             </div>
                                         </div>
@@ -380,7 +610,6 @@ const ChatbotWidgetBuilder = () => {
                                 </div>
                             )}
 
-                            {/* Launcher bubble */}
                             <button
                                 onClick={() => setWidgetOpen((o) => !o)}
                                 style={{ backgroundColor: color }}
