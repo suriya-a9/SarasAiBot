@@ -3,7 +3,7 @@ import PublicRoute from "./utls/publicRoutes";
 import ClientPrivateRoute from "./utls/ClientPrivateRoute";
 import MainLayout from "./layout/MainLayout";
 import HomePage from "./pages/publicPages/homePage";
-import CommonAuth from "./pages/publicPages/clientLogin";
+import CommonAuth from "./pages/publicPages/ClientLogin";
 import Register from "./pages/publicPages/ClientRegister";
 import Dashboard from "./pages/client/Dashboard";
 import Profile from "./pages/client/Profile";
