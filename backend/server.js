@@ -11,6 +11,7 @@ const adminAuthRoutes = require("./modules/Admin/Auth/adminAuth.routes");
 const clientAuthRoutes = require("./modules/Client/Auth/clientAuth.routes");
 const sarasBotRoutes = require("./modules/SarasAiBot/bot.routes");
 const sarasBotChatRoutes = require("./modules/SarasAiBot/chat.routes");
+const adminClient = require("./modules/Admin/clients/clients.routes");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -32,6 +33,7 @@ app.use("/api/clientAuth", clientAuthRoutes);
 app.use("/api/bots", sarasBotRoutes);
 app.use("/api/chat", sarasBotChatRoutes);
 app.use('/api/bots', require('./modules/SarasAiBot/analytics.routes'));
+app.use('/api/admin', adminClient);
 
 app.use((err, req, res, next) => {
     logger.error(err.stack);
