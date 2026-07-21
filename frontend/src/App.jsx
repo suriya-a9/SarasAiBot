@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import PublicRoute from "./utls/publicRoutes";
+import AdminPublicRoute from "./utls/adminPublicRoutes";
 import ClientPrivateRoute from "./utls/ClientPrivateRoute";
 import MainLayout from "./layout/MainLayout";
 import HomePage from "./pages/publicPages/homePage";
@@ -12,6 +13,7 @@ import ChatbotWidgetBuilder from "./pages/client/ChatBotWidget";
 import ConversationsPage from "./pages/client/ConversationsPage";
 import ChatbotSettingsPage from "./pages/client/ChatBotSettings";
 import HelpSupportPage from "./pages/client/HelpSupportPage";
+import AdminLogin from "./pages/publicPages/adminLogin";
 
 function App() {
   return (
@@ -39,6 +41,14 @@ function App() {
             <PublicRoute>
               <Register />
             </PublicRoute>
+          }
+        />
+        <Route
+          path="/admin-login"
+          element={
+            <AdminPublicRoute>
+              <AdminLogin />
+            </AdminPublicRoute>
           }
         />
 
