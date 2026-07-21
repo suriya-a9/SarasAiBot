@@ -10,6 +10,8 @@ import Profile from "./pages/client/Profile";
 import { Toaster } from "react-hot-toast";
 import ChatbotWidgetBuilder from "./pages/client/ChatBotWidget";
 import ConversationsPage from "./pages/client/ConversationsPage";
+import ChatbotSettingsPage from "./pages/client/ChatBotSettings";
+import HelpSupportPage from "./pages/client/HelpSupportPage";
 
 function App() {
   return (
@@ -51,6 +53,8 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/chat" element={<ChatbotWidgetBuilder />} />
           <Route path="/analytics/:botId?" element={<ConversationsPage />} />
+          <Route path="/settings" element={<ChatbotSettingsPage />} />
+          <Route path="/help" element={<HelpSupportPage />} />
         </Route>
       </Routes>
       <Toaster position="top-right" reverseOrder={false} duration={2000} />
