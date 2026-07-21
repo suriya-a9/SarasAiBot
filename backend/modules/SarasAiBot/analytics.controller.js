@@ -5,10 +5,6 @@ async function listConversations(req, res) {
         const { botId } = req.params;
         const clientId = req.user.id;
 
-        if (!botId) {
-            return res.status(400).json({ error: 'Bot ID is required' });
-        }
-
         const owns = await analyticsModel.verifyBotOwnership(botId, clientId);
         if (!owns) return res.status(404).json({ error: 'Bot not found' });
 
@@ -36,10 +32,6 @@ async function getConversationMessages(req, res) {
         const { botId, conversationId } = req.params;
         const clientId = req.user.id;
 
-        if (!botId) {
-            return res.status(400).json({ error: 'Bot ID is required' });
-        }
-
         const owns = await analyticsModel.verifyBotOwnership(botId, clientId);
         if (!owns) return res.status(404).json({ error: 'Bot not found' });
 
@@ -55,4 +47,45 @@ async function getConversationMessages(req, res) {
     }
 }
 
-module.exports = { listConversations, getConversationMessages };
+async function getStats(req, res) {
+    try {
+        const { botId } = req.params;
+        const clientId = req.user.id;
+
+        const owns = await analyticsModel.verifyBotOwnership(botId, clientId);
+        if (!owns) return res.status(404).json({ error: 'Bot not found' });
+
+        const stats = await analyticsModel.getBotStats(botId);
+        res.json(stats);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch stats' });
+    }
+}
+
+async function getRecentActivity(req, res) {
+    try {
+        const { botId } = req.params;
+        const clientId = req.user.id;
+
+        const owns = await analyticsModel.verifyBotOwnership(botId, clientId);
+        if (!owns) return res.status(404).json({ error: 'Bot not found' });
+
+        const limit = parseInt(req.query.limit, 10) || 5;
+        const activity = await analyticsModel.getRecentActivity(botId, limit);
+
+        const TEN_MINUTES = 10 * 60 * 1000;
+        const now = Date.now();
+        const withStatus = activity.map((c) => ({
+            ...c,
+            status: now - new Date(c.last_message_at).getTime() < TEN_MINUTES ? 'Active' : 'Completed',
+        }));
+
+        res.json({ activity: withStatus });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch recent activity' });
+    }
+}
+
+module.exports = { listConversations, getConversationMessages, getStats, getRecentActivity };

@@ -27,13 +27,18 @@ async function sendMessage(req, res) {
         await chatModel.saveMessage(conversation.id, 'user', message);
 
         const systemPrompt = `${bot.system_instructions || `You are a helpful assistant for ${bot.name}.`}
-Tone: ${bot.tone || 'friendly'}
+            Tone: ${bot.tone || 'friendly'}
 
-Use the following information to answer questions. If the answer isn't in this information, say you don't know and offer to connect the visitor with the business directly.
+            Formatting rules: Write in plain conversational sentences and short paragraphs only.
+            Do not use Markdown — no **bold**, no ### headings, no --- dividers, and no numbered
+            or bulleted lists. If you need to mention a few items, weave them into a normal
+            sentence instead of a list.
 
----
-${bot.knowledge_base || 'No knowledge base provided yet.'}
----`;
+            Use the following information to answer questions. If the answer isn't in this information, say you don't know and offer to connect the visitor with the business directly.
+
+            ---
+            ${bot.knowledge_base || 'No knowledge base provided yet.'}
+            ---`;
 
         const claudeMessages = [
             ...history.map(m => ({ role: m.role, content: m.content })),
@@ -83,6 +88,7 @@ async function getPublicConfig(req, res) {
 
     res.json({
         name: bot.name,
+        tone: bot.tone || 'Friendly',
         welcomeMessage: bot.welcome_message,
         avatar: bot.avatar,
         accentColor: bot.accent_color,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
     Bot,
     MessageSquare,
@@ -8,64 +8,126 @@ import {
     Settings,
     ArrowUpRight,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-const stats = [
-    {
-        title: "Total Conversations",
-        value: "12,458",
-        icon: MessageSquare,
-        color: "text-blue-600 border-blue-100 bg-blue-50/30",
-    },
-    {
-        title: "Active Users",
-        value: "2,341",
-        icon: Users,
-        color: "text-emerald-600 border-emerald-100 bg-emerald-50/30",
-    },
-    {
-        title: "Messages Today",
-        value: "8,923",
-        icon: Bot,
-        color: "text-violet-600 border-violet-100 bg-violet-50/30",
-    },
-    {
-        title: "Success Rate",
-        value: "98.7%",
-        icon: Activity,
-        color: "text-amber-600 border-amber-100 bg-amber-50/30",
-    },
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const recentChats = [
-    {
-        user: "John Doe",
-        message: "How do I reset my password?",
-        time: "2 mins ago",
-        status: "Resolved",
-    },
-    {
-        user: "Sarah",
-        message: "Pricing information",
-        time: "8 mins ago",
-        status: "Active",
-    },
-    {
-        user: "Michael",
-        message: "Need invoice copy",
-        time: "15 mins ago",
-        status: "Pending",
-    },
-    {
-        user: "Emma",
-        message: "API integration help",
-        time: "22 mins ago",
-        status: "Resolved",
-    },
-];
+function getClientToken() {
+    return localStorage.getItem("clientToken");
+}
 
-const Dashboard = () => {
+function formatRelativeTime(iso) {
+    if (!iso) return "—";
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hr${hrs === 1 ? "" : "s"} ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+const Dashboard = ({ botId: propBotId }) => {
     const navigate = useNavigate();
+    const { botId: routeBotId } = useParams();
+    const [activeBotId, setActiveBotId] = useState(propBotId || routeBotId || null);
+
+    const [stats, setStats] = useState(null);
+    const [activity, setActivity] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        setActiveBotId(propBotId || routeBotId || null);
+    }, [propBotId, routeBotId]);
+
+    useEffect(() => {
+        async function resolveBotAndLoad() {
+            let botId = activeBotId;
+
+            if (!botId) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/bots`, {
+                        headers: { Authorization: `Bearer ${getClientToken()}` },
+                    });
+                    if (!res.ok) throw new Error("Failed to load your bots");
+                    const bots = await res.json();
+                    botId = Array.isArray(bots) && bots[0] ? bots[0].id : null;
+                    if (!botId) {
+                        setError("No bot available yet.");
+                        setLoading(false);
+                        return;
+                    }
+                    setActiveBotId(botId);
+                } catch (err) {
+                    setError(err.message);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            await loadDashboardData(botId);
+        }
+
+        resolveBotAndLoad();
+    }, [activeBotId]);
+
+    async function loadDashboardData(botId) {
+        setLoading(true);
+        setError(null);
+        try {
+            const [statsRes, activityRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/bots/${botId}/stats`, {
+                    headers: { Authorization: `Bearer ${getClientToken()}` },
+                }),
+                fetch(`${API_BASE_URL}/api/bots/${botId}/recent-activity?limit=5`, {
+                    headers: { Authorization: `Bearer ${getClientToken()}` },
+                }),
+            ]);
+
+            if (!statsRes.ok) throw new Error("Failed to load stats");
+            if (!activityRes.ok) throw new Error("Failed to load recent activity");
+
+            const statsData = await statsRes.json();
+            const activityData = await activityRes.json();
+
+            setStats(statsData);
+            setActivity(activityData.activity || []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const statCards = [
+        {
+            title: "Total Conversations",
+            value: stats ? stats.totalConversations.toLocaleString() : "—",
+            icon: MessageSquare,
+            color: "text-blue-600 border-blue-100 bg-blue-50/30",
+        },
+        {
+            title: "Active Users",
+            value: stats ? stats.activeUsers.toLocaleString() : "—",
+            icon: Users,
+            color: "text-emerald-600 border-emerald-100 bg-emerald-50/30",
+        },
+        {
+            title: "Messages Today",
+            value: stats ? stats.messagesToday.toLocaleString() : "—",
+            icon: Bot,
+            color: "text-violet-600 border-violet-100 bg-violet-50/30",
+        },
+        {
+            title: "Success Rate",
+            value: stats && stats.successRate !== null ? `${stats.successRate.toFixed(1)}%` : "—",
+            icon: Activity,
+            color: "text-amber-600 border-amber-100 bg-amber-50/30",
+        },
+    ];
+
     return (
         <div className="min-h-screen bg-white text-zinc-800 antialiased p-6 md:p-8 lg:p-12 selection:bg-zinc-100 selection:text-zinc-900">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between border-b border-zinc-100 pb-8">
@@ -77,15 +139,16 @@ const Dashboard = () => {
                         System Operation & Performance Analytics
                     </p>
                 </div>
-
-                {/* <button className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-full bg-[#40295C] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-900 hover:scale-[1.01] active:scale-[0.99] shadow-sm" onClick={()=>navigate('/chat')}>
-                    <Plus size={16} className="transition-transform group-hover:rotate-90" />
-                    Create Chatbot
-                </button> */}
             </div>
 
+            {error && (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                    {error}
+                </div>
+            )}
+
             <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                {stats.map((item) => {
+                {statCards.map((item) => {
                     const Icon = item.icon;
 
                     return (
@@ -125,37 +188,43 @@ const Dashboard = () => {
                     </div>
 
                     <div className="divide-y divide-zinc-100">
-                        {recentChats.map((chat) => (
-                            <div
-                                key={chat.user}
-                                className="flex flex-col gap-4 p-6 transition-colors hover:bg-zinc-50/30 md:flex-row md:items-center md:justify-between"
-                            >
-                                <div className="space-y-1">
-                                    <h3 className="text-sm font-semibold text-zinc-950">
-                                        {chat.user}
-                                    </h3>
-                                    <p className="text-sm text-zinc-500 line-clamp-1 max-w-xl">
-                                        {chat.message}
-                                    </p>
-                                </div>
+                        {loading ? (
+                            <p className="p-6 text-sm font-medium text-zinc-400">Loading…</p>
+                        ) : activity.length === 0 ? (
+                            <p className="p-6 text-sm font-medium text-zinc-400">
+                                No activity yet. Conversations will show up here once visitors start chatting.
+                            </p>
+                        ) : (
+                            activity.map((chat) => (
+                                <div
+                                    key={chat.id}
+                                    className="flex flex-col gap-4 p-6 transition-colors hover:bg-zinc-50/30 md:flex-row md:items-center md:justify-between"
+                                >
+                                    <div className="space-y-1">
+                                        <h3 className="text-sm font-semibold text-zinc-950">
+                                            {chat.visitor_name || `Visitor ${chat.visitor_id ? chat.visitor_id.slice(0, 8) : "unknown"}`}
+                                        </h3>
+                                        <p className="text-sm text-zinc-500 line-clamp-1 max-w-xl">
+                                            {chat.last_message}
+                                        </p>
+                                    </div>
 
-                                <div className="flex items-center justify-between gap-6 md:justify-end">
-                                    <span
-                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${chat.status === "Resolved"
-                                            ? "bg-emerald-50 border-emerald-100 text-emerald-700"
-                                            : chat.status === "Pending"
-                                                ? "bg-amber-50 border-amber-100 text-amber-700"
-                                                : "bg-blue-50 border-blue-100 text-blue-700"
-                                            }`}
-                                    >
-                                        {chat.status}
-                                    </span>
-                                    <p className="text-xs text-zinc-400 font-medium whitespace-nowrap min-w-17.5 text-right">
-                                        {chat.time}
-                                    </p>
+                                    <div className="flex items-center justify-between gap-6 md:justify-end">
+                                        <span
+                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${chat.status === "Active"
+                                                ? "bg-blue-50 border-blue-100 text-blue-700"
+                                                : "bg-emerald-50 border-emerald-100 text-emerald-700"
+                                                }`}
+                                        >
+                                            {chat.status}
+                                        </span>
+                                        <p className="text-xs text-zinc-400 font-medium whitespace-nowrap min-w-17.5 text-right">
+                                            {formatRelativeTime(chat.last_message_at)}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
 
@@ -173,16 +242,22 @@ const Dashboard = () => {
 
                         <div className="mt-6 space-y-5">
                             <div className="flex items-center justify-between">
-                                <p className="text-xs font-medium text-zinc-400">Response Latency</p>
-                                <p className="text-sm font-semibold text-zinc-900 tracking-tight">1.2s</p>
+                                <p className="text-xs font-medium text-zinc-400">Total Conversations</p>
+                                <p className="text-sm font-semibold text-zinc-900 tracking-tight">
+                                    {stats ? stats.totalConversations.toLocaleString() : "—"}
+                                </p>
                             </div>
                             <div className="flex items-center justify-between">
-                                <p className="text-xs font-medium text-zinc-400">Core Engine</p>
-                                <p className="text-sm font-semibold text-zinc-900 tracking-tight">Optimized</p>
+                                <p className="text-xs font-medium text-zinc-400">Messages Today</p>
+                                <p className="text-sm font-semibold text-zinc-900 tracking-tight">
+                                    {stats ? stats.messagesToday.toLocaleString() : "—"}
+                                </p>
                             </div>
                             <div className="flex items-center justify-between">
-                                <p className="text-xs font-medium text-zinc-400">Index Volume</p>
-                                <p className="text-sm font-semibold text-zinc-900 tracking-tight">145 Files</p>
+                                <p className="text-xs font-medium text-zinc-400">Success Rate</p>
+                                <p className="text-sm font-semibold text-zinc-900 tracking-tight">
+                                    {stats && stats.successRate !== null ? `${stats.successRate.toFixed(1)}%` : "—"}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -193,17 +268,25 @@ const Dashboard = () => {
                         </h2>
 
                         <div className="space-y-2">
-                            <button className="group flex w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-white p-4 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:text-zinc-950 hover:bg-zinc-50/40">
+                            <button
+                                onClick={() => navigate('/chat')}
+                                className="group flex w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-white p-4 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:text-zinc-950 hover:bg-zinc-50/40"
+                            >
                                 <span>Create New Instance</span>
                                 <ArrowUpRight size={14} className="text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-zinc-600" />
                             </button>
 
-                            <button className="group flex w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-white p-4 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:text-zinc-950 hover:bg-zinc-50/40">
-                                <span>Index Orchestration</span>
+                            <button
+                                onClick={() => activeBotId && navigate('/conversations')}
+                                className="group flex w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-white p-4 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:text-zinc-950 hover:bg-zinc-50/40"
+                            >
+                                <span>View Conversations</span>
                                 <ArrowUpRight size={14} className="text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-zinc-600" />
                             </button>
 
-                            <button className="group flex w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-white p-4 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:text-zinc-950 hover:bg-zinc-50/40">
+                            <button
+                                onClick={() => activeBotId && navigate('/settings')}
+                                className="group flex w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-white p-4 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:text-zinc-950 hover:bg-zinc-50/40">
                                 <span>Global Configuration</span>
                                 <Settings size={14} className="text-zinc-400 transition-transform group-hover:rotate-45 group-hover:text-zinc-600" />
                             </button>

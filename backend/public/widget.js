@@ -26,7 +26,15 @@
         visitorInfo = null;
     }
 
-    const avatarEmoji = { bot: '🤖', sparkles: '✨', headphones: '🎧', message: '💬' };
+    const icons = {
+        bot: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>',
+        sparkles: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>',
+        headphones: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
+        message: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+        minimize: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+        close: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        send: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    };
     const fieldLabels = { name: 'Your name', email: 'Email address', phone: 'Phone number' };
     const fieldTypes = { name: 'text', email: 'email', phone: 'tel' };
 
@@ -43,7 +51,7 @@
         const color = config.accentColor || '#40295C';
         const position = config.position === 'left' ? 'left' : 'right';
         const sideCSS = position === 'left' ? 'left: 20px;' : 'right: 20px;';
-        const emoji = avatarEmoji[config.avatar] || '🤖';
+        const avatarIcon = icons[config.avatar] || icons.bot;
         const needsContactForm = config.requireContactForm && !visitorInfo;
 
         const style = document.createElement('style');
@@ -51,26 +59,79 @@
       .saras-bubble {
         position: fixed; bottom: 20px; ${sideCSS} width: 56px; height: 56px;
         border-radius: 50%; background: ${color}; color: #fff; border: none;
-        cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 999999;
-        font-size: 22px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 999999;
+        display: flex; align-items: center; justify-content: center;
+        transition: transform 0.15s;
       }
+      .saras-bubble:hover { transform: scale(1.05); }
       .saras-panel {
         position: fixed; bottom: 88px; ${sideCSS} width: 320px; height: 460px;
-        background: #fff; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        background: #fff; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+        border: 1px solid rgba(0,0,0,0.06);
         display: none; flex-direction: column; overflow: hidden; z-index: 999999;
-        font-family: -apple-system, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
       .saras-panel.open { display: flex; }
-      .saras-header { background: ${color}; color: #fff; padding: 14px 16px; font-weight: 600; display:flex; align-items:center; gap:8px; }
-      .saras-messages { flex: 1; overflow-y: auto; padding: 12px; background: #F7F7F5; }
-      .saras-msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 10px; max-width: 80%; font-size: 14px; line-height: 1.4; }
-      .saras-msg.user { background: ${color}; color: #fff; margin-left: auto; }
-      .saras-msg.assistant { background: #fff; color: #222; border: 1px solid #E5E5E0; }
-      .saras-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px 40px; }
-      .saras-chip { border: 1px solid ${color}55; color: ${color}; background: ${color}15; border-radius: 999px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
-      .saras-input-row { display: flex; border-top: 1px solid #eee; }
-      .saras-input { flex: 1; border: none; padding: 12px; font-size: 14px; outline: none; }
-      .saras-send { border: none; background: ${color}; color: #fff; padding: 0 16px; cursor: pointer; }
+
+      .saras-header {
+        background: ${color}; color: #fff; padding: 14px 16px;
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .saras-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .saras-avatar {
+        width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15);
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+      .saras-header-text { min-width: 0; }
+      .saras-header-name { font-size: 13.5px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .saras-header-status { font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+      .saras-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; flex-shrink: 0; }
+      .saras-header-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+      .saras-icon-btn {
+        background: none; border: none; color: rgba(255,255,255,0.75); cursor: pointer;
+        width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+        border-radius: 6px; transition: color 0.15s, background 0.15s;
+      }
+      .saras-icon-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
+
+      .saras-messages { flex: 1; overflow-y: auto; padding: 14px; background: #FAFAF9; scrollbar-width: thin; }
+      .saras-messages::-webkit-scrollbar { width: 4px; }
+      .saras-messages::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
+
+      .saras-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+      .saras-row.user { justify-content: flex-end; }
+      .saras-msg-avatar {
+        width: 24px; height: 24px; border-radius: 50%; background: ${color}; color: #fff;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+      }
+      .saras-msg {
+        padding: 9px 13px; border-radius: 16px; max-width: 205px; font-size: 13px;
+        line-height: 1.55; word-wrap: break-word;
+      }
+      .saras-msg.user { background: ${color}; color: #fff; border-bottom-right-radius: 4px; }
+      .saras-msg.assistant { background: #fff; color: #333; border: 1px solid #EAEAE5; border-bottom-left-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+
+      .saras-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px 46px; }
+      .saras-chip {
+        border: 1px solid ${color}33; color: ${color}; background: ${color}0d;
+        border-radius: 999px; padding: 6px 12px; font-size: 10.5px; font-weight: 500; cursor: pointer;
+        transition: background 0.15s;
+      }
+      .saras-chip:hover { background: ${color}1a; }
+
+      .saras-input-row { display: flex; align-items: center; gap: 8px; border-top: 1px solid #f0f0ee; padding: 8px; background: #fff; }
+      .saras-input {
+        flex: 1; border: 1px solid #e5e5e0; background: #fafaf8; border-radius: 999px;
+        padding: 9px 14px; font-size: 13px; outline: none;
+      }
+      .saras-input:focus { border-color: ${color}55; }
+      .saras-send {
+        border: none; background: ${color}; color: #fff; width: 32px; height: 32px; border-radius: 50%;
+        cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        transition: transform 0.15s;
+      }
+      .saras-send:hover { transform: scale(1.06); }
+      .saras-send:disabled { opacity: 0.5; cursor: default; }
 
       .saras-form-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 24px; background: #fff; }
       .saras-form-title { font-size: 15px; font-weight: 600; color: #222; margin-bottom: 4px; }
@@ -92,19 +153,55 @@
 
         const bubble = document.createElement('button');
         bubble.className = 'saras-bubble';
-        bubble.innerHTML = emoji;
+        bubble.innerHTML = avatarIcon;
+        document.body.appendChild(bubble);
 
         const panel = document.createElement('div');
         panel.className = 'saras-panel';
-        document.body.appendChild(bubble);
         document.body.appendChild(panel);
 
-        bubble.addEventListener('click', () => panel.classList.toggle('open'));
+        function openPanel() {
+            panel.classList.add('open');
+            bubble.innerHTML = icons.close;
+        }
+        function closePanel() {
+            panel.classList.remove('open');
+            bubble.innerHTML = avatarIcon;
+        }
+        bubble.addEventListener('click', () => {
+            panel.classList.contains('open') ? closePanel() : openPanel();
+        });
 
         if (needsContactForm) {
             renderContactForm();
         } else {
             renderChatUI();
+        }
+
+        function renderHeader() {
+            return `
+        <div class="saras-header">
+          <div class="saras-header-left">
+            <div class="saras-avatar">${avatarIcon}</div>
+            <div class="saras-header-text">
+              <div class="saras-header-name">${config.name || 'Chat with us'}</div>
+              <div class="saras-header-status">
+                <span class="saras-status-dot"></span>
+                Online · ${config.tone || 'Friendly'}
+              </div>
+            </div>
+          </div>
+          <div class="saras-header-actions">
+            <button class="saras-icon-btn" data-action="minimize" title="Minimize">${icons.minimize}</button>
+            <button class="saras-icon-btn" data-action="close" title="Close">${icons.close}</button>
+          </div>
+        </div>
+      `;
+        }
+
+        function wireHeaderActions() {
+            panel.querySelector('[data-action="minimize"]').addEventListener('click', closePanel);
+            panel.querySelector('[data-action="close"]').addEventListener('click', closePanel);
         }
 
         function renderContactForm() {
@@ -113,7 +210,7 @@
                 : ['name', 'email'];
 
             panel.innerHTML = `
-        <div class="saras-header"><span>${emoji}</span><span>${config.name || 'Chat with us'}</span></div>
+        ${renderHeader()}
         <div class="saras-form-wrap">
           <div class="saras-form-title">Let's get started</div>
           <div class="saras-form-sub">Please share a few details before we begin chatting.</div>
@@ -129,6 +226,8 @@
           </form>
         </div>
       `;
+
+            wireHeaderActions();
 
             const form = panel.querySelector('#saras-contact-form');
             const errorEl = panel.querySelector('.saras-form-error');
@@ -154,14 +253,16 @@
 
         function renderChatUI() {
             panel.innerHTML = `
-        <div class="saras-header"><span>${emoji}</span><span>${config.name || 'Chat with us'}</span></div>
+        ${renderHeader()}
         <div class="saras-messages"></div>
         <div class="saras-suggestions"></div>
         <div class="saras-input-row">
           <input class="saras-input" type="text" placeholder="Type a message..." />
-          <button class="saras-send">Send</button>
+          <button class="saras-send">${icons.send}</button>
         </div>
       `;
+
+            wireHeaderActions();
 
             const messagesEl = panel.querySelector('.saras-messages');
             const suggestionsEl = panel.querySelector('.saras-suggestions');
@@ -169,10 +270,16 @@
             const sendBtn = panel.querySelector('.saras-send');
 
             function addMessage(role, text) {
-                const el = document.createElement('div');
-                el.className = `saras-msg ${role}`;
-                el.textContent = text;
-                messagesEl.appendChild(el);
+                const row = document.createElement('div');
+                row.className = `saras-row ${role}`;
+                if (role === 'assistant') {
+                    row.innerHTML = `<div class="saras-msg-avatar">${avatarIcon}</div><div class="saras-msg assistant"></div>`;
+                    row.querySelector('.saras-msg').textContent = text;
+                } else {
+                    row.innerHTML = `<div class="saras-msg user"></div>`;
+                    row.querySelector('.saras-msg').textContent = text;
+                }
+                messagesEl.appendChild(row);
                 messagesEl.scrollTop = messagesEl.scrollHeight;
             }
 

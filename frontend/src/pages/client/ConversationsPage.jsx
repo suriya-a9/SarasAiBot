@@ -26,9 +26,9 @@ const ConversationsPage = ({ botId: propBotId }) => {
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedConvoData, setSelectedConvoData] = useState(null);
 
     const [selectedConvo, setSelectedConvo] = useState(null);
+    const [selectedConvoData, setSelectedConvoData] = useState(null);
     const [messages, setMessages] = useState([]);
     const [messagesLoading, setMessagesLoading] = useState(false);
 
@@ -105,9 +105,7 @@ const ConversationsPage = ({ botId: propBotId }) => {
         }
 
         setSelectedConvo(conversationId);
-        setSelectedConvoData(
-            conversations.find((c) => c.id === conversationId) || null
-        );
+        setSelectedConvoData(conversations.find((c) => c.id === conversationId) || null);
         setMessagesLoading(true);
         setMessages([]);
         try {
@@ -169,14 +167,16 @@ const ConversationsPage = ({ botId: propBotId }) => {
                                             ? c.visitor_name
                                             : `Visitor ${c.visitor_id ? c.visitor_id.slice(0, 8) : "unknown"}`}
                                     </span>
-                                    {(c.visitor_email || c.visitor_phone) && (
-                                        <p className="mt-0.5 text-[11px] text-zinc-400 truncate">
-                                            {[c.visitor_email, c.visitor_phone]
-                                                .filter(Boolean)
-                                                .join(" · ")}
-                                        </p>
-                                    )}
+                                    <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-zinc-400">
+                                        <Clock size={11} />
+                                        {formatDate(c.last_message_at || c.started_at)}
+                                    </span>
                                 </div>
+                                {(c.visitor_email || c.visitor_phone) && (
+                                    <p className="mt-0.5 text-[11px] text-zinc-400 truncate">
+                                        {[c.visitor_email, c.visitor_phone].filter(Boolean).join(" · ")}
+                                    </p>
+                                )}
                                 <p className="mt-2 text-sm text-zinc-700 line-clamp-2">
                                     {c.first_message || "No messages"}
                                 </p>
@@ -214,30 +214,17 @@ const ConversationsPage = ({ botId: propBotId }) => {
                     <div className="rounded-2xl border border-zinc-200/60 bg-zinc-50/20 overflow-hidden min-h-100">
                         <div className="border-b border-zinc-200/60 bg-white p-5 flex items-center justify-between">
                             <div>
-                                <h2 className="text-sm font-bold text-zinc-900">
-                                    Transcript
-                                </h2>
-
-                                {selectedConvoData &&
-                                    (selectedConvoData.visitor_name ||
-                                        selectedConvoData.visitor_email ||
-                                        selectedConvoData.visitor_phone) && (
-                                        <p className="mt-1 text-xs text-zinc-400">
-                                            {[
-                                                selectedConvoData.visitor_name,
-                                                selectedConvoData.visitor_email,
-                                                selectedConvoData.visitor_phone,
-                                            ]
-                                                .filter(Boolean)
-                                                .join(" · ")}
-                                        </p>
-                                    )}
+                                <h2 className="text-sm font-bold text-zinc-900">Transcript</h2>
+                                {selectedConvoData && (selectedConvoData.visitor_name || selectedConvoData.visitor_email || selectedConvoData.visitor_phone) && (
+                                    <p className="mt-1 text-xs text-zinc-400">
+                                        {[selectedConvoData.visitor_name, selectedConvoData.visitor_email, selectedConvoData.visitor_phone]
+                                            .filter(Boolean)
+                                            .join(" · ")}
+                                    </p>
+                                )}
                             </div>
                             {selectedConvo && (
-                                <button onClick={() => {
-                                    setSelectedConvo(null);
-                                    setSelectedConvoData(null);
-                                }} className="text-zinc-400 hover:text-zinc-700">
+                                <button onClick={() => { setSelectedConvo(null); setSelectedConvoData(null); }} className="text-zinc-400 hover:text-zinc-700">
                                     <X size={16} />
                                 </button>
                             )}
