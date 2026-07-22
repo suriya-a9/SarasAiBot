@@ -84,20 +84,110 @@ const getClientById = async (id) => {
 };
 
 const updateClientStatus = async (id, status) => {
-    const query = `
-        UPDATE clients
-        SET status = $1
-        WHERE id = $2
-        RETURNING *
-    `;
+    const pgClient = await db.connect();
+    try {
+        await pgClient.query('BEGIN');
 
-    const result = await db.query(query, [status, id]);
+        const clientResult = await pgClient.query(
+            `UPDATE clients SET status = $1 WHERE id = $2 RETURNING *`,
+            [status, id]
+        );
 
-    return result.rows[0];
+        if (!clientResult.rows[0]) {
+            await pgClient.query('ROLLBACK');
+            return null;
+        }
+
+        const botIsActive = status === 'Active';
+        await pgClient.query(
+            `UPDATE bots SET is_active = $1, updated_at = NOW() WHERE client_id = $2`,
+            [botIsActive, id]
+        );
+
+        await pgClient.query('COMMIT');
+        return clientResult.rows[0];
+    } catch (err) {
+        await pgClient.query('ROLLBACK');
+        throw err;
+    } finally {
+        pgClient.release();
+    }
+
+};
+
+const getClientsCount = async () => {
+    const result = await db.query(`
+        SELECT COUNT(*) AS total
+        FROM clients
+    `);
+
+    return Number(result.rows[0].total);
+};
+
+const getBotsCount = async () => {
+    const result = await db.query(`
+        SELECT COUNT(*) AS total
+        FROM bots
+    `);
+
+    return Number(result.rows[0].total);
+};
+
+const getActiveBotsCount = async () => {
+    const result = await db.query(`
+        SELECT COUNT(*) AS total
+        FROM bots
+        WHERE is_active = true
+    `);
+
+    return Number(result.rows[0].total);
+};
+
+const getNewClientsCount = async (days = 7) => {
+    const result = await db.query(
+        `
+        SELECT COUNT(*) AS total
+        FROM clients
+        WHERE created_at >= NOW() - ($1 || ' days')::interval
+    `,
+        [days]
+    );
+
+    return Number(result.rows[0].total);
+};
+
+const getMessagesTodayCount = async () => {
+    const result = await db.query(`
+        SELECT COUNT(*) AS total
+        FROM messages
+        WHERE role = 'user' AND created_at::date = CURRENT_DATE
+    `);
+
+    return Number(result.rows[0].total);
+};
+
+const getActiveEndUsersCount = async (days = 30) => {
+    const result = await db.query(
+        `
+        SELECT COUNT(DISTINCT c.visitor_id) AS total
+        FROM conversations c
+        JOIN messages m ON m.conversation_id = c.id
+        WHERE m.created_at >= NOW() - ($1 || ' days')::interval
+    `,
+        [days]
+    );
+
+    return Number(result.rows[0].total);
 };
 
 module.exports = {
     getAllClients,
     getClientById,
-    updateClientStatus
+    updateClientStatus,
+    getClientsCount,
+    getBotsCount,
+    getActiveBotsCount,
+    getNewClientsCount,
+    getMessagesTodayCount,
+    getActiveEndUsersCount,
 };

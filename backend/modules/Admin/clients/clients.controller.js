@@ -58,3 +58,37 @@ exports.updateClientStatus = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.dashboardCount = async (req, res, next) => {
+    try {
+        const [
+            clientCount,
+            botCount,
+            activeBots,
+            newClients7d,
+            messagesToday,
+            activeEndUsers,
+        ] = await Promise.all([
+            AdminClientModel.getClientsCount(),
+            AdminClientModel.getBotsCount(),
+            AdminClientModel.getActiveBotsCount(),
+            AdminClientModel.getNewClientsCount(7),
+            AdminClientModel.getMessagesTodayCount(),
+            AdminClientModel.getActiveEndUsersCount(30),
+        ]);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                clients: clientCount,
+                bots: botCount,
+                activeBots,
+                newClients7d,
+                messagesToday,
+                activeEndUsers,
+            }
+        });
+    } catch (err) {
+        next(err);
+    }
+};

@@ -6,6 +6,7 @@ const { validate } = require("../../../middleware/validation.middleware");
 const auth = require("../../../middleware/auth.middleware");
 const upload = require("../../../middleware/fileUpload");
 const { registerValidation, loginValidation, updateProfileValidation } = require("../../../utils/validators/clientAuth.validation");
+const checkClientStatus = require("../../../middleware/clientStatus.middleware");
 
 router.post(
     "/register",
@@ -15,13 +16,14 @@ router.post(
     clientRegister
 );
 router.post('/login', loginValidation, validate, clientLogin);
-router.get('/profile', auth, clientProfile);
+router.get('/profile', auth, checkClientStatus, clientProfile);
 router.patch(
     "/profile",
     auth,
     upload.single("image"),
     updateProfileValidation,
     validate,
+    checkClientStatus,
     updateProfile
 );
 

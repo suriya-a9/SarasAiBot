@@ -71,6 +71,13 @@ exports.clientLogin = async (req, res, next) => {
             });
         }
 
+        if (client.status !== "Active") {
+            return res.status(403).json({
+                success: false,
+                message: "Your account is inactive. Please contact the administrator."
+            });
+        }
+
         const passwordCheck = await bcrypt.compare(password, client.password);
 
         if (!passwordCheck) {

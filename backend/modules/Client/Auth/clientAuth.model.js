@@ -18,6 +18,7 @@ const findById = async (id) => {
             id,
             name,
             workEmail,
+            status,
             mobile_number,
             company,
             website,

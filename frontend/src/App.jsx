@@ -2,7 +2,9 @@ import { Routes, Route } from "react-router-dom";
 import PublicRoute from "./utls/publicRoutes";
 import AdminPublicRoute from "./utls/adminPublicRoutes";
 import ClientPrivateRoute from "./utls/ClientPrivateRoute";
+import AdminPrivateRoute from "./utls/AdminPrivateRoute";
 import MainLayout from "./layout/MainLayout";
+import AdminMainLayout from "./layout/AdminMainLayout";
 import HomePage from "./pages/publicPages/homePage";
 import CommonAuth from "./pages/publicPages/ClientLogin";
 import Register from "./pages/publicPages/ClientRegister";
@@ -14,6 +16,9 @@ import ConversationsPage from "./pages/client/ConversationsPage";
 import ChatbotSettingsPage from "./pages/client/ChatBotSettings";
 import HelpSupportPage from "./pages/client/HelpSupportPage";
 import AdminLogin from "./pages/publicPages/adminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminClient from "./pages/admin/AdminClient";
+import AdminClientDetail from "./pages/admin/AdminClientDetail";
 
 function App() {
   return (
@@ -65,6 +70,17 @@ function App() {
           <Route path="/analytics/:botId?" element={<ConversationsPage />} />
           <Route path="/settings" element={<ChatbotSettingsPage />} />
           <Route path="/help" element={<HelpSupportPage />} />
+        </Route>
+        <Route
+          element={
+            <AdminPrivateRoute>
+              <AdminMainLayout />
+            </AdminPrivateRoute>
+          }
+        >
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-client" element={<AdminClient />} />
+          <Route path="/admin-client/:id?" element={<AdminClientDetail />} />
         </Route>
       </Routes>
       <Toaster position="top-right" reverseOrder={false} duration={2000} />

@@ -1,61 +1,107 @@
 (function () {
-    const currentScript = document.currentScript;
-    const botId = currentScript.getAttribute('data-bot-id');
-    const API_BASE = new URL(currentScript.src).origin;
+  const currentScript = document.currentScript;
+  const botId = currentScript.getAttribute('data-bot-id');
+  const API_BASE = new URL(currentScript.src).origin;
 
-    if (!botId) {
-        console.error('Saras widget: data-bot-id is missing on the script tag.');
-        return;
-    }
+  if (!botId) {
+    console.error('Saras widget: data-bot-id is missing on the script tag.');
+    return;
+  }
 
-    const VISITOR_KEY = 'saras_visitor_id';
-    const CONVO_KEY = `saras_convo_${botId}`;
-    const CONTACT_KEY = `saras_contact_${botId}`;
+  const VISITOR_KEY = 'saras_visitor_id';
+  const CONVO_KEY = `saras_convo_${botId}`;
+  const CONTACT_KEY = `saras_contact_${botId}`;
 
-    let visitorId = localStorage.getItem(VISITOR_KEY);
-    if (!visitorId) {
-        visitorId = crypto.randomUUID();
-        localStorage.setItem(VISITOR_KEY, visitorId);
-    }
-    let conversationId = localStorage.getItem(CONVO_KEY) || null;
-    let visitorInfo = null;
+  let visitorId = localStorage.getItem(VISITOR_KEY);
+  if (!visitorId) {
+    visitorId = crypto.randomUUID();
+    localStorage.setItem(VISITOR_KEY, visitorId);
+  }
+  let conversationId = localStorage.getItem(CONVO_KEY) || null;
+  let visitorInfo = null;
+  try {
+    const stored = localStorage.getItem(CONTACT_KEY);
+    if (stored) visitorInfo = JSON.parse(stored);
+  } catch (e) {
+    visitorInfo = null;
+  }
+
+  const icons = {
+    bot: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>',
+    sparkles: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>',
+    headphones: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
+    message: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+    minimize: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    close: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    send: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+  };
+  const fieldLabels = { name: 'Your name', email: 'Email address', phone: 'Phone number' };
+  const fieldTypes = { name: 'text', email: 'email', phone: 'tel' };
+
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+  function playTone(freq, startTime, duration, type = 'sine', peakGain = 0.18) {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, ctx.currentTime + startTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime + startTime);
+    osc.stop(ctx.currentTime + startTime + duration + 0.02);
+  }
+  const notificationTones = {
+    chime: () => { playTone(880, 0, 0.18, 'sine'); playTone(1318.5, 0.1, 0.25, 'sine'); },
+    ping: () => { playTone(1400, 0, 0.15, 'sine', 0.15); },
+    pop: () => { playTone(500, 0, 0.08, 'sine', 0.2); playTone(700, 0.05, 0.1, 'sine', 0.15); },
+    bell: () => { playTone(1046.5, 0, 0.5, 'sine', 0.16); playTone(2093, 0, 0.3, 'sine', 0.05); },
+    'soft-knock': () => { playTone(180, 0, 0.09, 'triangle', 0.22); },
+  };
+  function playNotificationSound(name) {
     try {
-        const stored = localStorage.getItem(CONTACT_KEY);
-        if (stored) visitorInfo = JSON.parse(stored);
+      const play = notificationTones[name] || notificationTones.chime;
+      play();
     } catch (e) {
-        visitorInfo = null;
+    }
+  }
+
+  function renderAvatar(config) {
+    if (config.avatarType === 'illustrated' && config.avatarSeed) {
+      const url = `https://api.dicebear.com/9.x/${config.avatarStyle || 'avataaars'}/svg?seed=${encodeURIComponent(config.avatarSeed)}`;
+      return `<img src="${url}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`;
+    }
+    return icons[config.avatar] || icons.bot;
+  }
+
+  async function init() {
+    let config;
+    try {
+      const res = await fetch(`${API_BASE}/api/chat/${botId}/config`);
+      if (!res.ok) {
+        console.warn('Saras widget: this chatbot is currently unavailable.');
+        return;
+      }
+      config = await res.json();
+    } catch (e) {
+      console.error('Saras widget: failed to load bot config', e);
+      return;
     }
 
-    const icons = {
-        bot: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>',
-        sparkles: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>',
-        headphones: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
-        message: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
-        minimize: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>',
-        close: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-        send: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
-    };
-    const fieldLabels = { name: 'Your name', email: 'Email address', phone: 'Phone number' };
-    const fieldTypes = { name: 'text', email: 'email', phone: 'tel' };
+    const color = config.accentColor || '#40295C';
+    const position = config.position === 'left' ? 'left' : 'right';
+    const sideCSS = position === 'left' ? 'left: 20px;' : 'right: 20px;';
+    const avatarIcon = renderAvatar(config);
+    const needsContactForm = config.requireContactForm && !visitorInfo;
 
-    async function init() {
-        let config;
-        try {
-            const res = await fetch(`${API_BASE}/api/chat/${botId}/config`);
-            config = await res.json();
-        } catch (e) {
-            console.error('Saras widget: failed to load bot config', e);
-            return;
-        }
-
-        const color = config.accentColor || '#40295C';
-        const position = config.position === 'left' ? 'left' : 'right';
-        const sideCSS = position === 'left' ? 'left: 20px;' : 'right: 20px;';
-        const avatarIcon = icons[config.avatar] || icons.bot;
-        const needsContactForm = config.requireContactForm && !visitorInfo;
-
-        const style = document.createElement('style');
-        style.textContent = `
+    const style = document.createElement('style');
+    style.textContent = `
       .saras-bubble {
         position: fixed; bottom: 20px; ${sideCSS} width: 56px; height: 56px;
         border-radius: 50%; background: ${color}; color: #fff; border: none;
@@ -149,37 +195,37 @@
       }
       .saras-form-error { color: #c0392b; font-size: 11px; margin-top: -6px; margin-bottom: 10px; }
     `;
-        document.head.appendChild(style);
+    document.head.appendChild(style);
 
-        const bubble = document.createElement('button');
-        bubble.className = 'saras-bubble';
-        bubble.innerHTML = avatarIcon;
-        document.body.appendChild(bubble);
+    const bubble = document.createElement('button');
+    bubble.className = 'saras-bubble';
+    bubble.innerHTML = avatarIcon;
+    document.body.appendChild(bubble);
 
-        const panel = document.createElement('div');
-        panel.className = 'saras-panel';
-        document.body.appendChild(panel);
+    const panel = document.createElement('div');
+    panel.className = 'saras-panel';
+    document.body.appendChild(panel);
 
-        function openPanel() {
-            panel.classList.add('open');
-            bubble.innerHTML = icons.close;
-        }
-        function closePanel() {
-            panel.classList.remove('open');
-            bubble.innerHTML = avatarIcon;
-        }
-        bubble.addEventListener('click', () => {
-            panel.classList.contains('open') ? closePanel() : openPanel();
-        });
+    function openPanel() {
+      panel.classList.add('open');
+      bubble.innerHTML = icons.close;
+    }
+    function closePanel() {
+      panel.classList.remove('open');
+      bubble.innerHTML = avatarIcon;
+    }
+    bubble.addEventListener('click', () => {
+      panel.classList.contains('open') ? closePanel() : openPanel();
+    });
 
-        if (needsContactForm) {
-            renderContactForm();
-        } else {
-            renderChatUI();
-        }
+    if (needsContactForm) {
+      renderContactForm();
+    } else {
+      renderChatUI();
+    }
 
-        function renderHeader() {
-            return `
+    function renderHeader() {
+      return `
         <div class="saras-header">
           <div class="saras-header-left">
             <div class="saras-avatar">${avatarIcon}</div>
@@ -197,19 +243,19 @@
           </div>
         </div>
       `;
-        }
+    }
 
-        function wireHeaderActions() {
-            panel.querySelector('[data-action="minimize"]').addEventListener('click', closePanel);
-            panel.querySelector('[data-action="close"]').addEventListener('click', closePanel);
-        }
+    function wireHeaderActions() {
+      panel.querySelector('[data-action="minimize"]').addEventListener('click', closePanel);
+      panel.querySelector('[data-action="close"]').addEventListener('click', closePanel);
+    }
 
-        function renderContactForm() {
-            const fields = config.contactFormFields && config.contactFormFields.length
-                ? config.contactFormFields
-                : ['name', 'email'];
+    function renderContactForm() {
+      const fields = config.contactFormFields && config.contactFormFields.length
+        ? config.contactFormFields
+        : ['name', 'email'];
 
-            panel.innerHTML = `
+      panel.innerHTML = `
         ${renderHeader()}
         <div class="saras-form-wrap">
           <div class="saras-form-title">Let's get started</div>
@@ -227,32 +273,32 @@
         </div>
       `;
 
-            wireHeaderActions();
+      wireHeaderActions();
 
-            const form = panel.querySelector('#saras-contact-form');
-            const errorEl = panel.querySelector('.saras-form-error');
+      const form = panel.querySelector('#saras-contact-form');
+      const errorEl = panel.querySelector('.saras-form-error');
 
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const formData = new FormData(form);
-                const info = {};
-                for (const f of fields) {
-                    const val = (formData.get(f) || '').toString().trim();
-                    if (!val) {
-                        errorEl.textContent = 'Please fill in all fields.';
-                        errorEl.style.display = 'block';
-                        return;
-                    }
-                    info[f] = val;
-                }
-                visitorInfo = info;
-                localStorage.setItem(CONTACT_KEY, JSON.stringify(info));
-                renderChatUI();
-            });
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const info = {};
+        for (const f of fields) {
+          const val = (formData.get(f) || '').toString().trim();
+          if (!val) {
+            errorEl.textContent = 'Please fill in all fields.';
+            errorEl.style.display = 'block';
+            return;
+          }
+          info[f] = val;
         }
+        visitorInfo = info;
+        localStorage.setItem(CONTACT_KEY, JSON.stringify(info));
+        renderChatUI();
+      });
+    }
 
-        function renderChatUI() {
-            panel.innerHTML = `
+    function renderChatUI() {
+      panel.innerHTML = `
         ${renderHeader()}
         <div class="saras-messages"></div>
         <div class="saras-suggestions"></div>
@@ -262,72 +308,73 @@
         </div>
       `;
 
-            wireHeaderActions();
+      wireHeaderActions();
 
-            const messagesEl = panel.querySelector('.saras-messages');
-            const suggestionsEl = panel.querySelector('.saras-suggestions');
-            const inputEl = panel.querySelector('.saras-input');
-            const sendBtn = panel.querySelector('.saras-send');
+      const messagesEl = panel.querySelector('.saras-messages');
+      const suggestionsEl = panel.querySelector('.saras-suggestions');
+      const inputEl = panel.querySelector('.saras-input');
+      const sendBtn = panel.querySelector('.saras-send');
 
-            function addMessage(role, text) {
-                const row = document.createElement('div');
-                row.className = `saras-row ${role}`;
-                if (role === 'assistant') {
-                    row.innerHTML = `<div class="saras-msg-avatar">${avatarIcon}</div><div class="saras-msg assistant"></div>`;
-                    row.querySelector('.saras-msg').textContent = text;
-                } else {
-                    row.innerHTML = `<div class="saras-msg user"></div>`;
-                    row.querySelector('.saras-msg').textContent = text;
-                }
-                messagesEl.appendChild(row);
-                messagesEl.scrollTop = messagesEl.scrollHeight;
-            }
-
-            if (config.welcomeMessage) addMessage('assistant', config.welcomeMessage);
-            (config.suggestions || []).forEach((s) => {
-                const chip = document.createElement('button');
-                chip.className = 'saras-chip';
-                chip.textContent = s;
-                chip.onclick = () => { inputEl.value = s; sendMessage(); };
-                suggestionsEl.appendChild(chip);
-            });
-
-            async function sendMessage() {
-                const text = inputEl.value.trim();
-                if (!text) return;
-                addMessage('user', text);
-                inputEl.value = '';
-                suggestionsEl.innerHTML = '';
-                sendBtn.disabled = true;
-                try {
-                    const res = await fetch(`${API_BASE}/api/chat/${botId}/message`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            message: text,
-                            visitorId,
-                            conversationId,
-                            visitorInfo: conversationId ? undefined : visitorInfo,
-                        }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) { addMessage('assistant', "Sorry, something went wrong."); return; }
-                    if (data.conversationId && data.conversationId !== conversationId) {
-                        conversationId = data.conversationId;
-                        localStorage.setItem(CONVO_KEY, conversationId);
-                    }
-                    addMessage('assistant', data.reply);
-                } catch (err) {
-                    addMessage('assistant', "Sorry, I couldn't connect.");
-                } finally {
-                    sendBtn.disabled = false;
-                }
-            }
-
-            sendBtn.addEventListener('click', sendMessage);
-            inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+      function addMessage(role, text, { silent = false } = {}) {
+        const row = document.createElement('div');
+        row.className = `saras-row ${role}`;
+        if (role === 'assistant') {
+          row.innerHTML = `<div class="saras-msg-avatar">${avatarIcon}</div><div class="saras-msg assistant"></div>`;
+          row.querySelector('.saras-msg').textContent = text;
+          if (!silent) playNotificationSound(config.notificationSound);
+        } else {
+          row.innerHTML = `<div class="saras-msg user"></div>`;
+          row.querySelector('.saras-msg').textContent = text;
         }
-    }
+        messagesEl.appendChild(row);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
 
-    init();
+      if (config.welcomeMessage) addMessage('assistant', config.welcomeMessage, { silent: true });
+      (config.suggestions || []).forEach((s) => {
+        const chip = document.createElement('button');
+        chip.className = 'saras-chip';
+        chip.textContent = s;
+        chip.onclick = () => { inputEl.value = s; sendMessage(); };
+        suggestionsEl.appendChild(chip);
+      });
+
+      async function sendMessage() {
+        const text = inputEl.value.trim();
+        if (!text) return;
+        addMessage('user', text);
+        inputEl.value = '';
+        suggestionsEl.innerHTML = '';
+        sendBtn.disabled = true;
+        try {
+          const res = await fetch(`${API_BASE}/api/chat/${botId}/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: text,
+              visitorId,
+              conversationId,
+              visitorInfo: conversationId ? undefined : visitorInfo,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) { addMessage('assistant', "Sorry, something went wrong."); return; }
+          if (data.conversationId && data.conversationId !== conversationId) {
+            conversationId = data.conversationId;
+            localStorage.setItem(CONVO_KEY, conversationId);
+          }
+          addMessage('assistant', data.reply);
+        } catch (err) {
+          addMessage('assistant', "Sorry, I couldn't connect.");
+        } finally {
+          sendBtn.disabled = false;
+        }
+      }
+
+      sendBtn.addEventListener('click', sendMessage);
+      inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+    }
+  }
+
+  init();
 })();

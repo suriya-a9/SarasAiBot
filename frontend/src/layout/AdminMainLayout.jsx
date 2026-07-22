@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import { useAuth } from '../context/AuthContext';
+import { Outlet } from 'react-router-dom';
+import AdminSidebar from './AdminSidebar';
 
-const MainLayout = () => {
+const AdminMainLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
@@ -20,41 +19,6 @@ const MainLayout = () => {
         window.addEventListener('resize', updateResize);
         return () => window.removeEventListener('resize', updateResize);
     }, []);
-
-    const location = useLocation();
-    const navigate = useNavigate();
-    const { clientToken, logout } = useAuth();
-
-    useEffect(() => {
-        let mounted = true;
-        async function verify() {
-            if (!clientToken) return;
-            try {
-                const base = import.meta.env.VITE_API_BASE_URL || "";
-                const res = await fetch(`${base}/api/clientAuth/profile`, {
-                    headers: { Authorization: `Bearer ${clientToken}` },
-                });
-
-                if (!mounted) return;
-
-                if (res.status === 401 || res.status === 403) {
-                    try {
-                        logout();
-                    } catch (e) {
-                        localStorage.removeItem("clientToken");
-                    }
-                    navigate('/login', { replace: true });
-                }
-            } catch (err) {
-            }
-        }
-
-        verify();
-
-        return () => {
-            mounted = false;
-        };
-    }, [location.pathname, clientToken, logout, navigate]);
 
     const toggleSidebar = () => {
         if (isMobile) setIsSidebarOpen((prev) => !prev);
@@ -82,7 +46,7 @@ const MainLayout = () => {
                     </button>
                 )}
 
-                <Sidebar
+                <AdminSidebar
                     isOpen={isSidebarOpen}
                     isMobile={isMobile}
                     closeSidebar={closeSidebar}
@@ -100,4 +64,4 @@ const MainLayout = () => {
     );
 };
 
-export default MainLayout;
+export default AdminMainLayout;

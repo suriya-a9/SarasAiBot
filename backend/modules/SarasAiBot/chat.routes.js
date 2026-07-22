@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const chatController = require('./chat.controller');
+const checkClientStatus = require("../../middleware/clientStatus.middleware");
 const cors = require('cors');
 
 router.use(cors());

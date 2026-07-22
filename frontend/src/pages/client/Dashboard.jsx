@@ -277,7 +277,7 @@ const Dashboard = ({ botId: propBotId }) => {
                             </button>
 
                             <button
-                                onClick={() => activeBotId && navigate('/conversations')}
+                                onClick={() => activeBotId && navigate('/analytics')}
                                 className="group flex w-full items-center justify-between rounded-xl border border-zinc-200/80 bg-white p-4 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:text-zinc-950 hover:bg-zinc-50/40"
                             >
                                 <span>View Conversations</span>

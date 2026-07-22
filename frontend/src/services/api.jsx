@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://localhost:8080/api",
-    // baseURL: "https://sarasaibot-6oq5.onrender.com/api",
+    baseURL: `${import.meta.env.VITE_API_BASE_URL}/api`,
 });
 
 api.interceptors.request.use(
@@ -21,13 +20,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (
-            error.response &&
-            (error.response.status === 401 || error.response.status === 403) &&
-            (error.response.data?.message === "Account Deleted" || error.response.data?.message === "Account Disabled")
-        ) {
-            localStorage.removeItem("token");
-            window.location.href = "/login";
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            const message = error.response.data?.message || "";
+            const isClientAuthFailure = [
+                "Account Deleted",
+                "Account Disabled",
+                "Your account is inactive. Please contact the administrator.",
+            ].some((text) => message === text || message.includes("inactive"));
+
+            const requestUrl = error.config?.url || "";
+            const isAuthEntryPoint = requestUrl.includes("/clientAuth/login") || requestUrl.includes("/clientAuth/register");
+
+            if (isClientAuthFailure && !isAuthEntryPoint) {
+                localStorage.removeItem("clientToken");
+                window.location.href = "/login";
+            }
         }
         return Promise.reject(error);
     }
