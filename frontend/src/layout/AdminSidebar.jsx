@@ -32,9 +32,9 @@ const AdminSidebar = ({ isOpen, isMobile, closeSidebar }) => {
     const navigationItems = [
         { id: "admin-dashboard", label: "Dashboard", path: "/admin-dashboard", icon: LayoutDashboard, submenu: null },
         { id: "client", label: "Clients", path: "/admin-client", icon: UsersRound, submenu: null },
-        { id: "analytics", label: "Analytics", path: "/analytics", icon: BarChart3, submenu: null },
-        { id: "settings", label: "Settings", path: "/settings", icon: Settings, submenu: null },
-        { id: "help", label: "Help & Support", path: "/help", icon: CircleHelp, submenu: null },
+        // { id: "analytics", label: "Analytics", path: "/analytics", icon: BarChart3, submenu: null },
+        // { id: "settings", label: "Settings", path: "/settings", icon: Settings, submenu: null },
+        // { id: "help", label: "Help & Support", path: "/help", icon: CircleHelp, submenu: null },
     ];
 
     const handleNavigation = (path) => {
@@ -152,7 +152,7 @@ const AdminSidebar = ({ isOpen, isMobile, closeSidebar }) => {
                         >
                             <button
                                 className="bg-transparent border-none px-4 py-2.5 text-left cursor-pointer text-[#333] hover:bg-[#f5f7fa]"
-                                onClick={() => { navigate('/profile'); setAccountOpen(false); closeSidebar(); }}
+                                onClick={() => { navigate('/admin-profile'); setAccountOpen(false); closeSidebar(); }}
                             >
                                 Profile
                             </button>

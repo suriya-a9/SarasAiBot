@@ -19,6 +19,7 @@ import AdminLogin from "./pages/publicPages/adminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminClient from "./pages/admin/AdminClient";
 import AdminClientDetail from "./pages/admin/AdminClientDetail";
+import AdminProfile from "./pages/admin/AdminProfile";
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-client" element={<AdminClient />} />
           <Route path="/admin-client/:id?" element={<AdminClientDetail />} />
+          <Route path="/admin-profile" element={<AdminProfile />} />
         </Route>
       </Routes>
       <Toaster position="top-right" reverseOrder={false} duration={2000} />

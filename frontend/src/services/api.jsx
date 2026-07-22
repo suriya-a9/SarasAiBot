@@ -9,8 +9,6 @@ api.interceptors.request.use(
         const token = localStorage.getItem("clientToken");
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-        } else {
-            delete config.headers.Authorization;
         }
         return config;
     },
