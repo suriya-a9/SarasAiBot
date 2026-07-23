@@ -284,7 +284,7 @@ export default function Profile() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Organization</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Role</label>
                                 <div className="relative">
                                     <Building2 size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
                                     <input
@@ -302,7 +302,7 @@ export default function Profile() {
                             </div>
 
                             <div className="sm:col-span-2 space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Digital Domain Address</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Gender</label>
                                 <div className="relative">
                                     <Globe size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
                                     <input
@@ -311,7 +311,7 @@ export default function Profile() {
                                         type="url"
                                         value={formData.gender}
                                         onChange={handleChange}
-                                        className={`w-full h-12 pl-11 pr-4 rounded-xl text-sm font-medium transition-all outline-none border ${editable
+                                        className={`w-full h-12 pl-11 pr-4 rounded-xl text-sm capitalize font-medium transition-all outline-none border ${editable
                                             ? 'border-zinc-200 bg-white text-zinc-900 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400/20'
                                             : 'border-transparent bg-zinc-50/60 text-zinc-600 cursor-text'
                                             }`}
