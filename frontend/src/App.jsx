@@ -20,6 +20,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminClient from "./pages/admin/AdminClient";
 import AdminClientDetail from "./pages/admin/AdminClientDetail";
 import AdminProfile from "./pages/admin/AdminProfile";
+import AdminBots from "./pages/admin/AdminBots";
+import AdminBotDetail from "./pages/admin/AdminBotDetail";
 
 function App() {
   return (
@@ -83,6 +85,8 @@ function App() {
           <Route path="/admin-client" element={<AdminClient />} />
           <Route path="/admin-client/:id?" element={<AdminClientDetail />} />
           <Route path="/admin-profile" element={<AdminProfile />} />
+          <Route path="/admin-bots" element={<AdminBots />} />
+          <Route path="/admin-bot/:id" element={<AdminBotDetail />} />
         </Route>
       </Routes>
       <Toaster position="top-right" reverseOrder={false} duration={2000} />

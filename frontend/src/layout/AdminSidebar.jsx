@@ -32,6 +32,7 @@ const AdminSidebar = ({ isOpen, isMobile, closeSidebar }) => {
     const navigationItems = [
         { id: "admin-dashboard", label: "Dashboard", path: "/admin-dashboard", icon: LayoutDashboard, submenu: null },
         { id: "client", label: "Clients", path: "/admin-client", icon: UsersRound, submenu: null },
+        { id: "bots", label: "Bots", path: "/admin-bots", icon: Bot, submenu: null },
         // { id: "analytics", label: "Analytics", path: "/analytics", icon: BarChart3, submenu: null },
         // { id: "settings", label: "Settings", path: "/settings", icon: Settings, submenu: null },
         // { id: "help", label: "Help & Support", path: "/help", icon: CircleHelp, submenu: null },
